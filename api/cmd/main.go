@@ -77,6 +77,10 @@ func main() {
 	router.Use(middleware.Compress(5))
 	router.Use(middleware.Recoverer)
 
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "<html><body><a href='https://github.com/subtle-byte/ghloc'>Docs</a></body><html>")
+	})
+
 	getStatHandler := &handler.GetStatHandler{&service}
 	getStatHandler.RegisterOn(router)
 
