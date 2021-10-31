@@ -19,13 +19,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var debugToken *string
+
 func DebugMiddleware(next http.Handler) http.Handler {
-	token, ok := os.LookupEnv("DEBUG_TOKEN")
-	if !ok {
+	if debugToken == nil {
 		return http.HandlerFunc(http.NotFound)
 	}
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if r.FormValue("debug_token") == token {
+		if r.FormValue("debug_token") == *debugToken {
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.Header().Set("Content-Disposition", `attachment; filename="profile"`)
 			if err := pprof.StartCPUProfile(w); err != nil {
@@ -46,9 +47,9 @@ func DebugMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func connectDB() (_ *sql.DB, close func() error) {
-	db, err := sql.Open("postgres", os.Getenv("DB_CONN"))
+func connectDB() (_ *sql.DB, close func() error, err error) {
 	close = func() error { return nil }
+	db, err := sql.Open("postgres", os.Getenv("DB_CONN"))
 	if err == nil {
 		close = db.Close
 		err = db.Ping()
@@ -57,16 +58,25 @@ func connectDB() (_ *sql.DB, close func() error) {
 	if err != nil {
 		log.Printf("Error connecting to DB: %v", err)
 		log.Println("Warning: continue without DB")
-		return nil, close
+		close()
+		return nil, nil, err
 	}
-	return db, close
+	return db, close, nil
 }
 
 func main() {
+	if token, ok := os.LookupEnv("DEBUG_TOKEN"); ok {
+		debugToken = &token
+		log.Println("Debug token is set")
+	}
+
 	github := repository.Github{}
-	db, closeDB := connectDB()
-	defer closeDB()
-	postgres := repository.NewPostgres(db)
+	db, closeDB, err := connectDB()
+	postgres := service.LOCProvider(nil)
+	if err == nil {
+		defer closeDB()
+		postgres = repository.NewPostgres(db)
+	}
 	service := service.Service{postgres, &github}
 
 	router := chi.NewRouter()
@@ -81,7 +91,7 @@ func main() {
 		fmt.Fprintf(w, "<html><body><a href='https://github.com/subtle-byte/ghloc'>Docs</a></body><html>")
 	})
 
-	getStatHandler := &handler.GetStatHandler{&service}
+	getStatHandler := &handler.GetStatHandler{&service, debugToken}
 	getStatHandler.RegisterOn(router)
 
 	redirectHandler := &handler.RedirectHandler{}

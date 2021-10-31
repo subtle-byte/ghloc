@@ -33,11 +33,15 @@ type Service struct {
 	ContentProvider ContentProvider
 }
 
-func (s *Service) GetStat(user, repo, branch string, filter []string) (*model.StatTree, error) {
+func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvider bool) (*model.StatTree, error) {
 	if s.LOCProvider != nil {
-		locs, err := s.LOCProvider.GetLOCs(user, repo, branch)
-		if err == nil { // TODO?
-			return buildStatTree(locs, filter), nil
+		if !noLOCProvider {
+			locs, err := s.LOCProvider.GetLOCs(user, repo, branch)
+			if err == nil { // TODO?
+				return buildStatTree(locs, filter), nil
+			}
+		} else {
+			log.Println("GetStat: don't use loc provider (only in this request)")
 		}
 	}
 
@@ -69,7 +73,7 @@ func (s *Service) GetStat(user, repo, branch string, filter []string) (*model.St
 
 	log.Println("LOCs counted in", time.Since(start))
 
-	if s.LOCProvider != nil {
+	if s.LOCProvider != nil && !noLOCProvider {
 		err := s.LOCProvider.SetLOCs(user, repo, branch, locs)
 		if err != nil {
 			log.Println("Error saving LOCs:", err)

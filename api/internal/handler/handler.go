@@ -11,11 +11,12 @@ import (
 )
 
 type Service interface {
-	GetStat(user, repo, branch string, filter []string) (*model.StatTree, error)
+	GetStat(user, repo, branch string, filter []string, noLOCProvider bool) (*model.StatTree, error)
 }
 
 type GetStatHandler struct {
-	Service Service
+	Service    Service
+	DebugToken *string
 }
 
 func (h *GetStatHandler) RegisterOn(router chi.Router) {
@@ -28,12 +29,23 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	branch := chi.URLParam(r, "branch")
 
 	r.ParseForm()
+
+	noLOCProvider := false
+	if no_cache := r.Form["no_cache"]; h.DebugToken != nil && no_cache != nil {
+		if *h.DebugToken == r.FormValue("debug_token") {
+			noLOCProvider = true
+		} else {
+			writeResponse(w, model.BadRequest{"Invalid debug token"})
+			return
+		}
+	}
+
 	filter := r.Form["filter"]
 	if len(filter) == 1 {
 		filter = strings.Split(filter[0], ",")
 	}
 
-	stat, err := h.Service.GetStat(user, repo, branch, filter)
+	stat, err := h.Service.GetStat(user, repo, branch, filter, noLOCProvider)
 	if err != nil {
 		writeResponse(w, err)
 		return
