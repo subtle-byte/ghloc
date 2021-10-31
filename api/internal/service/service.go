@@ -12,11 +12,6 @@ type LOCForPath struct {
 	LOC  int
 }
 
-type ContentForPath struct {
-	Path          string
-	ContentOpener model.Opener
-}
-
 var ErrNoData = fmt.Errorf("no data")
 
 type LOCProvider interface {
@@ -24,8 +19,15 @@ type LOCProvider interface {
 	GetLOCs(user, repo, branch string) ([]LOCForPath, error) // error may be ErrNoData
 }
 
+type TempStorage int
+
+const (
+	File TempStorage = iota
+	Memory
+)
+
 type ContentProvider interface {
-	GetContent(user, repo, branch string) ([]ContentForPath, error)
+	GetContent(user, repo, branch string, tempStorage TempStorage) (*model.Content, error)
 }
 
 type Service struct {
@@ -33,7 +35,7 @@ type Service struct {
 	ContentProvider ContentProvider
 }
 
-func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvider bool) (*model.StatTree, error) {
+func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvider bool, tempStorage TempStorage) (*model.StatTree, error) {
 	if s.LOCProvider != nil {
 		if !noLOCProvider {
 			locs, err := s.LOCProvider.GetLOCs(user, repo, branch)
@@ -55,15 +57,16 @@ func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvi
 		return locCounter.Count(rc)
 	}
 
-	contents, err := s.ContentProvider.GetContent(user, repo, branch)
+	contents, err := s.ContentProvider.GetContent(user, repo, branch, tempStorage)
 	if err != nil {
 		return nil, err
 	}
+	defer contents.Close()
 
 	start := time.Now()
 
 	locs := []LOCForPath(nil)
-	for _, content := range contents {
+	for _, content := range contents.ByPath {
 		loc, err := contentToLOC(content.ContentOpener)
 		if err != nil {
 			return nil, err

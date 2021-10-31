@@ -2,14 +2,13 @@ package repository
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
 	"ghloc/internal/model"
 	"ghloc/internal/service"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -23,7 +22,19 @@ func BuildGithubUrl(user, repo, branch string) string {
 	return fmt.Sprintf("https://github.com/%v/%v/archive/refs/heads/%v.zip", user, repo, branch)
 }
 
-func (r Github) GetContent(user, repo, branch string) ([]service.ContentForPath, error) {
+func ReadIntoMemory(r io.Reader) (*bytes.Reader, error) {
+	buf := &bytes.Buffer{}
+
+	lr := &LimitedReader{Reader: r, Remaining: maxZipSize}
+	_, err := io.Copy(buf, lr)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(buf.Bytes()), nil
+}
+
+func (r Github) GetContent(user, repo, branch string, tempStorage service.TempStorage) (*model.Content, error) {
 	url := BuildGithubUrl(user, repo, branch)
 
 	start := time.Now()
@@ -42,30 +53,37 @@ func (r Github) GetContent(user, repo, branch string) ([]service.ContentForPath,
 		return nil, fmt.Errorf("%v %v %v", url, "unexpected status code", resp.StatusCode)
 	}
 
-	tmpfile, err := ioutil.TempFile("", "")
-	if err != nil {
-		return nil, err
+	contents := &model.Content{}
+
+	readerAt := io.ReaderAt(nil)
+	len := 0
+	if tempStorage == service.File {
+		tempFile, err := NewTempFile(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		contents.Closer = tempFile.Close
+		readerAt = tempFile
+		len = tempFile.Len()
+	} else {
+		r, err := ReadIntoMemory(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		readerAt = r
+		len = r.Len()
+		log.Print("github.GetContent: use memory for temp data")
 	}
-	log.Print("temp file: ", tmpfile.Name())
-	defer os.Remove(tmpfile.Name())
-	defer tmpfile.Close()
-	lr := &LimitedReader{Reader: resp.Body, Remaining: maxZipSize}
-	_, err = io.Copy(tmpfile, lr)
+
+	logIOBlocking("github.GetContent", start, fmt.Sprintf("%v %.2fMiB", url, float64(len)/1024.0/1024.0))
+
+	reader, err := zip.NewReader(readerAt, int64(len))
 	if err != nil {
 		return nil, err
 	}
 
-	zipSize := maxZipSize - lr.Remaining
-	logIOBlocking("github.GetContent", start, fmt.Sprintf("%v %.2fMiB", url, float64(zipSize)/1024.0/1024.0))
-
-	reader, err := zip.OpenReader(tmpfile.Name())
-	if err != nil {
-		return nil, err
-	}
-
-	contents := []service.ContentForPath(nil)
 	for _, file := range reader.File {
-		contents = append(contents, service.ContentForPath{
+		contents.ByPath = append(contents.ByPath, model.ContentForPath{
 			Path:          file.Name[strings.Index(file.Name, "/")+1:],
 			ContentOpener: file.Open,
 		})

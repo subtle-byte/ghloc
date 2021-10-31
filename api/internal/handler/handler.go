@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"ghloc/internal/model"
+	"ghloc/internal/service"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type Service interface {
-	GetStat(user, repo, branch string, filter []string, noLOCProvider bool) (*model.StatTree, error)
+	GetStat(user, repo, branch string, filter []string, noLOCProvider bool, tempStorage service.TempStorage) (*model.StatTree, error)
 }
 
 type GetStatHandler struct {
@@ -31,10 +32,17 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	noLOCProvider := false
-	if no_cache := r.Form["no_cache"]; h.DebugToken != nil && no_cache != nil {
-		if *h.DebugToken == r.FormValue("debug_token") {
-			noLOCProvider = true
-		} else {
+	tempStorage := service.File
+	if h.DebugToken != nil {
+		debugTokenInRequest := r.FormValue("debug_token")
+		if debugTokenInRequest == *h.DebugToken {
+			if r.Form["no_cache"] != nil {
+				noLOCProvider = true
+			}
+			if r.Form["mem_for_temp"] != nil {
+				tempStorage = service.Memory
+			}
+		} else if debugTokenInRequest != "" {
 			writeResponse(w, model.BadRequest{"Invalid debug token"})
 			return
 		}
@@ -45,7 +53,7 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filter = strings.Split(filter[0], ",")
 	}
 
-	stat, err := h.Service.GetStat(user, repo, branch, filter, noLOCProvider)
+	stat, err := h.Service.GetStat(user, repo, branch, filter, noLOCProvider, tempStorage)
 	if err != nil {
 		writeResponse(w, err)
 		return
