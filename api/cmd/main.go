@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	_ "github.com/lib/pq"
 )
 
@@ -86,6 +87,7 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Compress(5))
 	router.Use(middleware.Recoverer)
+	router.Use(cors.AllowAll().Handler)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<html><body><a href='https://github.com/subtle-byte/ghloc'>Docs</a></body><html>")
