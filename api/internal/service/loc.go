@@ -31,6 +31,9 @@ func (lc *locCounter) Count(r io.Reader) (int, error) {
 		}
 		if err != nil {
 			if err == io.EOF {
+				if nonSpace {
+					loc++
+				}
 				break
 			}
 			return 0, err
