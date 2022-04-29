@@ -26,6 +26,9 @@ func writeResponse(w http.ResponseWriter, v interface{}) {
 		if badRequest := (model.BadRequest{}); errors.As(err, &badRequest) {
 			code = http.StatusBadRequest
 			v = errResponse{badRequest.Msg}
+		} else if errors.Is(err, model.NotFound) {
+			code = http.StatusNotFound
+			v = errResponse{"Not found"}
 		} else {
 			setISE(err)
 		}

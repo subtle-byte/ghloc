@@ -18,15 +18,15 @@ func (lc *locCounter) Count(r io.Reader) (int, error) {
 	for {
 		n, err := r.Read(lc.buf)
 		for _, c := range lc.buf[:n] {
-			if c == '\n' {
+			if c > ' ' {
+				nonSpace = true
+			} else if c == '\n' {
 				if nonSpace {
 					loc++
 				}
 				nonSpace = false
-				continue
-			}
-			if c > ' ' {
-				nonSpace = true
+			} else if c != ' ' && c != '\t' && c != '\r' {
+				return 1, nil
 			}
 		}
 		if err != nil {

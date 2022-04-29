@@ -1,5 +1,9 @@
 package model
 
+import "fmt"
+
+var NotFound = fmt.Errorf("not found")
+
 type BadRequest struct {
 	Msg string
 }

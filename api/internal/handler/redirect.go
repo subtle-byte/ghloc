@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
 	"ghloc/internal/model"
-	"ghloc/internal/repository"
+	"ghloc/internal/util"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -15,35 +18,43 @@ func (h *RedirectHandler) RegisterOn(router chi.Router) {
 	router.Get("/{user}/{repo}", h.ServeHTTP)
 }
 
-func urlExists(url string) bool {
-	resp, err := http.Head(url)
+func getDefaultBranch(user, repo string) (_ string, err error) {
+	defer util.WrapErr("get default branch", &err)
+
+	resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/%v/%v", user, repo))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	defer resp.Body.Close()
-	switch c := resp.StatusCode; c {
-	case http.StatusOK:
-		return true
-	case http.StatusNotFound:
-		return false
-	default:
-		panic(c)
+	body, err := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == http.StatusNotFound {
+		return "", model.NotFound
 	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("status %s (body: %s)", resp.Status, string(body))
+	}
+
+	repoInfo := struct {
+		DefaultBranch string `json:"default_branch"`
+	}{}
+	if err = json.Unmarshal(body, &repoInfo); err != nil {
+		return "", err
+	}
+	if repoInfo.DefaultBranch == "" {
+		return "", fmt.Errorf("empty branch (body: %s)", string(body))
+	}
+
+	return repoInfo.DefaultBranch, nil
 }
 
 func (h RedirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user := chi.URLParam(r, "user")
 	repo := chi.URLParam(r, "repo")
 
-	branch := ""
-	if master := "master"; urlExists(repository.BuildGithubUrl(user, repo, master)) {
-		branch = master
-	} else if main := "main"; urlExists(repository.BuildGithubUrl(user, repo, main)) {
-		branch = main
-	}
-
-	if branch == "" {
-		writeResponse(w, model.BadRequest{"There is no master or main branch."})
+	branch, err := getDefaultBranch(user, repo)
+	if err != nil {
+		writeResponse(w, err)
 		return
 	}
 

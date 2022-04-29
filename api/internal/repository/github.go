@@ -47,7 +47,7 @@ func (r Github) GetContent(user, repo, branch string, tempStorage service.TempSt
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, model.BadRequest{"Repository is not found"}
+		return nil, model.NotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%v %v %v", url, "unexpected status code", resp.StatusCode)
