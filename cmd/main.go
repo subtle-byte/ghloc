@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"ghloc/internal/handler"
 	"ghloc/internal/repository"
@@ -18,6 +19,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	_ "github.com/lib/pq"
+
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var debugToken *string
@@ -48,24 +53,53 @@ func DebugMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+type MigrationLogger struct {
+	Prefix string
+}
+
+func (m MigrationLogger) Printf(format string, v ...interface{}) {
+	log.Print(m.Prefix, fmt.Sprintf(format, v...))
+}
+
+func (m MigrationLogger) Verbose() bool {
+	return false
+}
+
 func connectDB() (_ *sql.DB, close func() error, err error) {
+	dbConn := os.Getenv("DB_CONN")
+	if dbConn == "" {
+		return nil, nil, fmt.Errorf("env var DB_CONN is not provided")
+	}
+
+	m, err := migrate.New("file://migrations", dbConn)
+	if err != nil {
+		return nil, nil, fmt.Errorf("create migrator: %w", err)
+	}
+	m.Log = MigrationLogger{Prefix: "migration: "}
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return nil, nil, fmt.Errorf("migrate up: %w", err)
+	}
+
 	close = func() error { return nil }
-	db, err := sql.Open("postgres", os.Getenv("DB_CONN"))
+	db, err := sql.Open("postgres", dbConn)
 	if err == nil {
 		close = db.Close
 		err = db.Ping()
 	}
 
 	if err != nil {
-		log.Printf("Error connecting to DB: %v", err)
-		log.Println("Warning: continue without DB")
 		close()
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("connect to db: %w", err)
 	}
 	return db, close, nil
 }
 
+var buildTime = "unknown" // will be replaced during building the docker image
+
 func main() {
+	log.Printf("Starting up the app (build time: %v)\n", buildTime)
+
 	if token, ok := os.LookupEnv("DEBUG_TOKEN"); ok {
 		debugToken = &token
 		log.Println("Debug token is set")
@@ -77,6 +111,10 @@ func main() {
 	if err == nil {
 		defer closeDB()
 		postgres = repository.NewPostgres(db)
+		log.Println("Connected to DB")
+	} else {
+		log.Printf("Error connecting to DB: %v", err)
+		log.Println("Warning: continue without DB")
 	}
 	service := service.Service{postgres, &github}
 
