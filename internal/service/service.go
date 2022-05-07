@@ -35,12 +35,12 @@ type Service struct {
 	ContentProvider ContentProvider
 }
 
-func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvider bool, tempStorage TempStorage) (*model.StatTree, error) {
+func (s *Service) GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage TempStorage) (*model.StatTree, error) {
 	if s.LOCProvider != nil {
 		if !noLOCProvider {
 			locs, err := s.LOCProvider.GetLOCs(user, repo, branch)
 			if err == nil { // TODO?
-				return buildStatTree(locs, filter), nil
+				return buildStatTree(locs, filter, matcher), nil
 			}
 		} else {
 			log.Println("GetStat: don't use loc provider (only in this request)")
@@ -83,5 +83,5 @@ func (s *Service) GetStat(user, repo, branch string, filter []string, noLOCProvi
 		}
 	}
 
-	return buildStatTree(locs, filter), nil
+	return buildStatTree(locs, filter, matcher), nil
 }

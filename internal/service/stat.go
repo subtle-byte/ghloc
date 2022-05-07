@@ -33,11 +33,14 @@ func addInStatTree(tree *model.StatTree, locForPath LOCForPath) {
 	}
 }
 
-func buildStatTree(locs []LOCForPath, filter []string) *model.StatTree {
+func buildStatTree(locs []LOCForPath, filter, matcher *string) *model.StatTree {
 	root := model.NewStatTreeDir()
 
 	for _, locForPath := range locs {
-		if filtered(locForPath.Path, filter) {
+		if filter != nil && filtered(locForPath.Path, filter) {
+			continue
+		}
+		if matcher != nil && !filtered(locForPath.Path, matcher) {
 			continue
 		}
 		addInStatTree(root, locForPath)

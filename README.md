@@ -6,14 +6,14 @@ The idea is simple: you make a request to the API in the format `/<username>/<re
 
 It is deployed on the [ghloc.bytes.pw](http://ghloc.bytes.pw) (although no any guaranty), so it posible to get statistics using [ghloc.bytes.pw/go-chi/chi](http://ghloc.bytes.pw/go-chi/chi) for example.
 
-You can filter some files from the results using `filter` URL parameter, e.g. `/someuser/somerepo?filter=test` will ignore all paths containing `test`. Examples of more powerful usage:
-* `filter=test,.sum` will filter paths containing `test` or `.sum`.
-* `filter=_test.go$,^docs/` will filter paths ending with `_test.go` or starting with `docs/`.
-* `filter=.md$,!^README.md$` will filter all markdown files (i.e. ending with `.md`) except file `README.md` in the root of the repository.
-* `filter=` will filter all paths (you will get zero result, it is because the filter is empty string and any path contains empty string).
-* `filter=,!.go` will filter all paths, except ones containing `.go`.
-* `filter=,!.go$` will filter all paths, except ones ending with `.go`.
-* `filter=,!^src/` will filter all paths, except ones starting with `src/` (i.e. placed in the `src` folder).
+You can show only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
+* `match=.js$` will show only paths ending with '.js`.
+* `match=^src/` will show only paths starting with `src/` (i.e. placed in the `src` folder).
+* `match=!test` will filter out paths containing `test`.
+* `match=!test,!.sum` will filter paths containing `test` or `.sum`.
+* `match=.json$,!^package-lock.json$` will show only json files except for `package-lock.json` file.
+
+There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
 ### TODO
 

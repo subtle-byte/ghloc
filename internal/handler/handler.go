@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"ghloc/internal/model"
 	"ghloc/internal/service"
@@ -12,7 +11,7 @@ import (
 )
 
 type Service interface {
-	GetStat(user, repo, branch string, filter []string, noLOCProvider bool, tempStorage service.TempStorage) (*model.StatTree, error)
+	GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage service.TempStorage) (*model.StatTree, error)
 }
 
 type GetStatHandler struct {
@@ -48,12 +47,17 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	filter := r.Form["filter"]
-	if len(filter) == 1 {
-		filter = strings.Split(filter[0], ",")
+	var filter *string
+	if filters := r.Form["filter"]; len(filters) >= 1 {
+		filter = &filters[0]
 	}
 
-	stat, err := h.Service.GetStat(user, repo, branch, filter, noLOCProvider, tempStorage)
+	var matcher *string
+	if matchers := r.Form["match"]; len(matchers) >= 1 {
+		matcher = &matchers[0]
+	}
+
+	stat, err := h.Service.GetStat(user, repo, branch, filter, matcher, noLOCProvider, tempStorage)
 	if err != nil {
 		writeResponse(w, err)
 		return
