@@ -27,7 +27,7 @@ There is useful web frontend for this API: https://github.com/pajecawav/ghloc-we
 
 Installation (it uses `go` tool):
 ```console
-go install github.com/subtle-byte/ghloc/cmd/ghloc
+go install github.com/subtle-byte/ghloc/cmd/ghloc@latest
 ```
 
 And then to count lines of code in the current directory - run the command `ghloc`. The web page will be open with the results, e.g.:
