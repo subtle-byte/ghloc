@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/pkg/browser"
 	"github.com/subtle-byte/ghloc/internal/file_provider/files_in_dir"
@@ -17,6 +18,21 @@ import (
 var serverStatic embed.FS
 
 func main() {
+	fmt.Print("Counting lines of code...")
+	counted := make(chan bool, 1)
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-counted:
+				return
+			case <-ticker.C:
+				fmt.Print(".")
+			}
+		}
+	}()
+
 	files, err := files_in_dir.GetFilesInDir(".")
 	if err != nil {
 		panic(err)
@@ -36,6 +52,9 @@ func main() {
 		}()
 	}
 	locsForPaths := locCounter.GetLOCsForPaths()
+
+	counted <- true
+	fmt.Println()
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
