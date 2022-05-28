@@ -1,6 +1,12 @@
-# GitHub Lines Of Code
+# ghloc (GitHub Lines Of Code)
 
-It is just for fun project for counting the number of non-empty lines of code in any public Github repository.
+It is just for fun project for counting the number of non-empty lines of code in a project.
+
+It can work in 2 modes:
+* As server for getting info about any public Github repository.
+* As console utility for getting info about current directory.
+
+## Server mode
 
 The idea is simple: you make a request to the API in the format `/<username>/<repository>/<branch>` (or just `/<username>/<repository>` (the branch `master` or `main` will be used if any exists)) and you get the response with human-readable JSON.
 
@@ -15,7 +21,20 @@ You can show only some files using `match` URL parameter, e.g. with `/someuser/s
 
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
-### TODO
+## CLI mode
+
+Installation (it uses `go` tool):
+```console
+go install github.com/subtle-byte/ghloc/cmd/ghloc
+```
+
+And then to count lines of code in the current directory - run console command `ghloc`. The web page with the results will be open, e.g.:
+
+<img src="https://user-images.githubusercontent.com/71576382/170814341-a5467b61-b974-4d7a-af80-043037a46608.png" width="600">
+
+Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
+
+## TODO
 
 * Use `context.Context`.
 * Add the prioritized tasks-queue for uncached requests? Limited number of the tasks are executed concurrently.
