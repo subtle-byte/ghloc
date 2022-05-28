@@ -7,7 +7,7 @@ The idea is simple: you make a request to the API in the format `/<username>/<re
 It is deployed on the [ghloc.bytes.pw](http://ghloc.bytes.pw) (although no any guaranty), so it posible to get statistics using [ghloc.bytes.pw/go-chi/chi](http://ghloc.bytes.pw/go-chi/chi) for example.
 
 You can show only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
-* `match=.js$` will show only paths ending with '.js`.
+* `match=.js$` will show only paths ending with `.js`.
 * `match=^src/` will show only paths starting with `src/` (i.e. placed in the `src` folder).
 * `match=!test` will filter out paths containing `test`.
 * `match=!test,!.sum` will filter paths containing `test` or `.sum`.
