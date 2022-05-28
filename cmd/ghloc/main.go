@@ -64,6 +64,6 @@ func main() {
 	url := fmt.Sprintf("http://%v", socket.Addr())
 	fmt.Println("Web UI:", url)
 	fmt.Println("API:   ", url+"/api")
-	browser.OpenURL(url)
+	go browser.OpenURL(url)
 	http.Serve(socket, nil)
 }
