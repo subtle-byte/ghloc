@@ -1,7 +1,7 @@
-package repository
+package github
 
 import (
-	"ghloc/internal/model"
+	"ghloc/internal/rest"
 	"io"
 )
 
@@ -13,7 +13,7 @@ type LimitedReader struct {
 
 func (r *LimitedReader) Read(p []byte) (n int, err error) {
 	if r.Remaining <= 0 {
-		return 0, model.BadRequest{Msg: "Too large repository"}
+		return 0, rest.BadRequest{Msg: "Too large repository"}
 	}
 	if len(p) > r.Remaining {
 		p = p[0:r.Remaining]

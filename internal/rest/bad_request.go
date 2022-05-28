@@ -1,4 +1,4 @@
-package model
+package rest
 
 import "fmt"
 

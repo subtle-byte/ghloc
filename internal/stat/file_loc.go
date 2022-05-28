@@ -1,18 +1,18 @@
-package service
+package stat
 
 import (
 	"io"
 )
 
-type locCounter struct {
+type fileLOCCounter struct {
 	buf []byte
 }
 
-func newLOCCounter() locCounter {
-	return locCounter{make([]byte, 1000)}
+func newFileLOCCounter() fileLOCCounter {
+	return fileLOCCounter{make([]byte, 1000)}
 }
 
-func (lc *locCounter) Count(r io.Reader) (int, error) {
+func (lc *fileLOCCounter) Count(r io.Reader) (int, error) {
 	loc := 0
 	nonSpace := false
 	for {

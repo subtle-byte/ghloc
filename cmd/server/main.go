@@ -4,9 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"ghloc/internal/handler"
-	"ghloc/internal/repository"
-	"ghloc/internal/service"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -15,14 +12,18 @@ import (
 
 	// _ "net/http/pprof"
 
+	"ghloc/internal/cacher/postgres"
+	"ghloc/internal/file_provider/github"
+	"ghloc/internal/github_handler"
+	"ghloc/internal/github_service"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	_ "github.com/lib/pq"
-
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 var debugToken *string
@@ -105,18 +106,18 @@ func main() {
 		log.Println("Debug token is set")
 	}
 
-	github := repository.Github{}
+	github := github.Github{}
 	db, closeDB, err := connectDB()
-	postgres := service.LOCProvider(nil)
+	pg := github_service.LOCProvider(nil)
 	if err == nil {
 		defer closeDB()
-		postgres = repository.NewPostgres(db)
+		pg = postgres.NewPostgres(db)
 		log.Println("Connected to DB")
 	} else {
 		log.Printf("Error connecting to DB: %v", err)
 		log.Println("Warning: continue without DB")
 	}
-	service := service.Service{postgres, &github}
+	service := github_service.Service{pg, &github}
 
 	router := chi.NewRouter()
 	router.Use(middleware.RealIP)
@@ -131,10 +132,10 @@ func main() {
 		fmt.Fprintf(w, "<html><body><a href='https://github.com/subtle-byte/ghloc'>Docs</a></body><html>")
 	})
 
-	getStatHandler := &handler.GetStatHandler{&service, debugToken}
+	getStatHandler := &github_handler.GetStatHandler{&service, debugToken}
 	getStatHandler.RegisterOn(router)
 
-	redirectHandler := &handler.RedirectHandler{}
+	redirectHandler := &github_handler.RedirectHandler{}
 	redirectHandler.RegisterOn(router)
 
 	// router.Mount("/debug", http.DefaultServeMux)
@@ -142,6 +143,6 @@ func main() {
 	router.With(DebugMiddleware).Route("/debug", func(r chi.Router) {
 		getStatHandler.RegisterOn(r)
 	})
-
+	fmt.Println("Listening on http://localhost:8080")
 	http.ListenAndServe(":8080", router)
 }

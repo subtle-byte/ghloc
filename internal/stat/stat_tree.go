@@ -1,10 +1,29 @@
-package service
+package stat
 
 import (
-	"ghloc/internal/model"
 	"path"
 	"strings"
 )
+
+type FileName = string
+type LangName = string
+type LinesNumber = int
+
+type StatTree struct {
+	LOC        LinesNumber
+	LOCByLangs map[LangName]LinesNumber
+	Children   map[FileName]*StatTree
+}
+
+func newStatTreeDir() *StatTree {
+	return &StatTree{
+		Children: make(map[FileName]*StatTree),
+	}
+}
+
+func (t StatTree) IsDir() bool {
+	return t.Children != nil
+}
 
 func splitPath(filePath string) (dirs []string, fileName string) {
 	dirsStr, fileName := path.Split(filePath)
@@ -16,39 +35,21 @@ func splitPath(filePath string) (dirs []string, fileName string) {
 	return
 }
 
-func addInStatTree(tree *model.StatTree, locForPath LOCForPath) {
-	dirs, fileName := splitPath(locForPath.Path)
+func (tree *StatTree) add(path string, loc int) {
+	dirs, fileName := splitPath(path)
 
 	for _, dirName := range dirs {
 		child, ok := tree.Children[dirName]
 		if !ok {
-			child = model.NewStatTreeDir()
+			child = newStatTreeDir()
 			tree.Children[dirName] = child
 		}
 		tree = child
 	}
 
 	if fileName != "" {
-		tree.Children[fileName] = &model.StatTree{LOC: locForPath.LOC}
+		tree.Children[fileName] = &StatTree{LOC: loc}
 	}
-}
-
-func buildStatTree(locs []LOCForPath, filter, matcher *string) *model.StatTree {
-	root := model.NewStatTreeDir()
-
-	for _, locForPath := range locs {
-		if filter != nil && filtered(locForPath.Path, filter) {
-			continue
-		}
-		if matcher != nil && !filtered(locForPath.Path, matcher) {
-			continue
-		}
-		addInStatTree(root, locForPath)
-	}
-
-	countDirStat(root)
-
-	return root
 }
 
 func getLangName(fileName string) string {
@@ -59,11 +60,11 @@ func getLangName(fileName string) string {
 	return name
 }
 
-func countDirStat(dir *model.StatTree) {
+func (dir *StatTree) countDirs() {
 	dir.LOCByLangs = map[string]int{}
 	for childFileName, child := range dir.Children {
 		if child.IsDir() {
-			countDirStat(child)
+			child.countDirs()
 			for langName, loc := range child.LOCByLangs {
 				dir.LOCByLangs[langName] += loc
 				dir.LOC += loc

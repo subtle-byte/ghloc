@@ -12,5 +12,7 @@ require (
 require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	go.uber.org/atomic v1.7.0 // indirect
+	golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf // indirect
 )

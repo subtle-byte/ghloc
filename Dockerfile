@@ -2,7 +2,7 @@ FROM golang:1.17
 
 WORKDIR /src
 ADD . .
-RUN CGO_ENABLED=0 go build -v -ldflags "-s -X main.buildTime=`date --iso-8601=seconds -u`" -o /bin/app cmd/main.go
+RUN CGO_ENABLED=0 go build -v -ldflags "-s -X main.buildTime=`date --iso-8601=seconds -u`" -o /bin/app ./cmd/server
 
 # FROM alpine
 FROM busybox

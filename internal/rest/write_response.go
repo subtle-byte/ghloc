@@ -1,9 +1,8 @@
-package handler
+package rest
 
 import (
 	"encoding/json"
 	"errors"
-	"ghloc/internal/model"
 	"log"
 	"mime"
 	"net/http"
@@ -13,7 +12,7 @@ type errResponse struct {
 	Error string `json:"error"`
 }
 
-func writeResponse(w http.ResponseWriter, v interface{}) {
+func WriteResponse(w http.ResponseWriter, v interface{}) {
 	code := http.StatusOK
 
 	setISE := func(err error) {
@@ -23,10 +22,10 @@ func writeResponse(w http.ResponseWriter, v interface{}) {
 	}
 
 	if err, ok := v.(error); ok {
-		if badRequest := (model.BadRequest{}); errors.As(err, &badRequest) {
+		if badRequest := (BadRequest{}); errors.As(err, &badRequest) {
 			code = http.StatusBadRequest
 			v = errResponse{badRequest.Msg}
-		} else if errors.Is(err, model.NotFound) {
+		} else if errors.Is(err, NotFound) {
 			code = http.StatusNotFound
 			v = errResponse{"Not found"}
 		} else {

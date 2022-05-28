@@ -7,4 +7,4 @@ stop-db:
 run:
 	DB_CONN="postgres://postgres:password@localhost:54329/?sslmode=disable" \
 	DEBUG_TOKEN="" \
-		go run cmd/main.go
+		go run cmd/server/main.go

@@ -1,4 +1,4 @@
-package service
+package stat
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 
 const locInLongText = 8471
 
-func BenchmarkLOCCounter(b *testing.B) {
+func BenchmarkFileLOCCounter(b *testing.B) {
 	file, err := os.Open("./testdata/long_text.txt")
 	if err != nil {
 		b.Fatal(err)
@@ -18,7 +18,7 @@ func BenchmarkLOCCounter(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	locCounter := newLOCCounter()
+	locCounter := newFileLOCCounter()
 	for i := 0; i < b.N; i++ {
 		r := bytes.NewReader(zip)
 		loc, err := locCounter.Count(r)

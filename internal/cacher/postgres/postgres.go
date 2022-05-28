@@ -1,9 +1,11 @@
-package repository
+package postgres
 
 import (
 	"database/sql"
 	"encoding/json"
-	"ghloc/internal/service"
+	"ghloc/internal/github_service"
+	"ghloc/internal/stat"
+	"ghloc/internal/util"
 	"log"
 	"time"
 )
@@ -31,7 +33,7 @@ func repoName(user, repo, branch string) string {
 	return user + "/" + repo + "/" + branch
 }
 
-func (p Postgres) SetLOCs(user, repo, branch string, locs []service.LOCForPath) error {
+func (p Postgres) SetLOCs(user, repo, branch string, locs []stat.LOCForPath) error {
 	repoName := repoName(user, repo, branch)
 
 	bytes, err := json.Marshal(locs)
@@ -46,11 +48,11 @@ func (p Postgres) SetLOCs(user, repo, branch string, locs []service.LOCForPath) 
 		return err
 	}
 
-	logIOBlocking("SetLOCs", start)
+	util.LogIOBlocking("SetLOCs", start)
 	return nil
 }
 
-func (p Postgres) GetLOCs(user, repo, branch string) (locs []service.LOCForPath, _ error) {
+func (p Postgres) GetLOCs(user, repo, branch string) (locs []stat.LOCForPath, _ error) {
 	repoName := repoName(user, repo, branch)
 
 	bytes := []byte(nil)
@@ -60,12 +62,12 @@ func (p Postgres) GetLOCs(user, repo, branch string) (locs []service.LOCForPath,
 	err := p.db.QueryRow("SELECT locs FROM repos WHERE name = $1", repoName).Scan(&bytes)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, service.ErrNoData
+			return nil, github_service.ErrNoData
 		}
 		return nil, err
 	}
 
-	logIOBlocking("GetLOCs", start)
+	util.LogIOBlocking("GetLOCs", start)
 
 	err = json.Unmarshal(bytes, &locs)
 	return locs, err

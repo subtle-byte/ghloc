@@ -1,4 +1,4 @@
-package repository
+package util
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func logIOBlocking(name string, start time.Time, meta ...interface{}) {
+func LogIOBlocking(name string, start time.Time, meta ...interface{}) {
 	metaStr := ""
 	if meta != nil {
 		metaStr += "("

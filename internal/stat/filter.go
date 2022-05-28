@@ -1,4 +1,4 @@
-package service
+package stat
 
 import "strings"
 

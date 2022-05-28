@@ -1,9 +1,9 @@
-package handler
+package github_handler
 
 import (
 	"encoding/json"
 	"fmt"
-	"ghloc/internal/model"
+	"ghloc/internal/rest"
 	"ghloc/internal/util"
 	"io"
 	"net/http"
@@ -29,7 +29,7 @@ func getDefaultBranch(user, repo string) (_ string, err error) {
 	body, err := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusNotFound {
-		return "", model.NotFound
+		return "", rest.NotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("status %s (body: %s)", resp.Status, string(body))
@@ -54,7 +54,7 @@ func (h RedirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	branch, err := getDefaultBranch(user, repo)
 	if err != nil {
-		writeResponse(w, err)
+		rest.WriteResponse(w, err)
 		return
 	}
 
