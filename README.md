@@ -21,6 +21,8 @@ You can show only some files using `match` URL parameter, e.g. with `/someuser/s
 
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
+There is useful web frontend for this API: https://github.com/pajecawav/ghloc-web (thanks @pajecawav).
+
 ## CLI mode
 
 Installation (it uses `go` tool):
@@ -28,7 +30,7 @@ Installation (it uses `go` tool):
 go install github.com/subtle-byte/ghloc/cmd/ghloc
 ```
 
-And then to count lines of code in the current directory - run console command `ghloc`. The web page with the results will be open, e.g.:
+And then to count lines of code in the current directory - run the command `ghloc`. The web page will be open with the results, e.g.:
 
 <img src="https://user-images.githubusercontent.com/71576382/170814341-a5467b61-b974-4d7a-af80-043037a46608.png" width="600">
 
