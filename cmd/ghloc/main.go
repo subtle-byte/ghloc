@@ -3,14 +3,14 @@ package main
 import (
 	"embed"
 	"fmt"
-	"ghloc/internal/file_provider/files_in_dir"
-	"ghloc/internal/rest"
-	"ghloc/internal/stat"
 	"io/fs"
 	"net"
 	"net/http"
 
 	"github.com/pkg/browser"
+	"github.com/subtle-byte/ghloc/internal/file_provider/files_in_dir"
+	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/stat"
 )
 
 //go:embed server_static

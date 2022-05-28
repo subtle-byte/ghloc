@@ -4,15 +4,16 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"ghloc/internal/file_provider"
-	"ghloc/internal/github_service"
-	"ghloc/internal/rest"
-	"ghloc/internal/util"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/subtle-byte/ghloc/internal/file_provider"
+	"github.com/subtle-byte/ghloc/internal/github_service"
+	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 type Github struct {

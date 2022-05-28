@@ -12,11 +12,6 @@ import (
 
 	// _ "net/http/pprof"
 
-	"ghloc/internal/cacher/postgres"
-	"ghloc/internal/file_provider/github"
-	"ghloc/internal/github_handler"
-	"ghloc/internal/github_service"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -24,6 +19,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/subtle-byte/ghloc/internal/cacher/postgres"
+	"github.com/subtle-byte/ghloc/internal/file_provider/github"
+	"github.com/subtle-byte/ghloc/internal/github_handler"
+	"github.com/subtle-byte/ghloc/internal/github_service"
 )
 
 var debugToken *string

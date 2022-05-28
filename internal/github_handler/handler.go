@@ -3,11 +3,10 @@ package github_handler
 import (
 	"net/http"
 
-	"ghloc/internal/github_service"
-	"ghloc/internal/rest"
-	"ghloc/internal/stat"
-
 	"github.com/go-chi/chi/v5"
+	"github.com/subtle-byte/ghloc/internal/github_service"
+	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/stat"
 )
 
 type Service interface {

@@ -3,12 +3,12 @@ package github_handler
 import (
 	"encoding/json"
 	"fmt"
-	"ghloc/internal/rest"
-	"ghloc/internal/util"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 type RedirectHandler struct {

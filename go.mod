@@ -1,4 +1,4 @@
-module ghloc
+module github.com/subtle-byte/ghloc
 
 go 1.17
 

@@ -2,7 +2,8 @@ package rest
 
 import (
 	"encoding/json"
-	"ghloc/internal/stat"
+
+	"github.com/subtle-byte/ghloc/internal/stat"
 )
 
 type Stat stat.StatTree

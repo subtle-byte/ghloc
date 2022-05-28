@@ -3,11 +3,12 @@ package postgres
 import (
 	"database/sql"
 	"encoding/json"
-	"ghloc/internal/github_service"
-	"ghloc/internal/stat"
-	"ghloc/internal/util"
 	"log"
 	"time"
+
+	"github.com/subtle-byte/ghloc/internal/github_service"
+	"github.com/subtle-byte/ghloc/internal/stat"
+	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 type Postgres struct {

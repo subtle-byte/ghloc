@@ -1,11 +1,12 @@
 package files_in_dir
 
 import (
-	"ghloc/internal/file_provider"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/subtle-byte/ghloc/internal/file_provider"
 )
 
 func GetFilesInDir(path string) ([]file_provider.FileForPath, error) {

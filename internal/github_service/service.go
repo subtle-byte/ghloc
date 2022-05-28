@@ -2,10 +2,11 @@ package github_service
 
 import (
 	"fmt"
-	"ghloc/internal/file_provider"
-	"ghloc/internal/stat"
 	"log"
 	"time"
+
+	"github.com/subtle-byte/ghloc/internal/file_provider"
+	"github.com/subtle-byte/ghloc/internal/stat"
 )
 
 var ErrNoData = fmt.Errorf("no data")
