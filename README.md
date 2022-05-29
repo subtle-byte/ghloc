@@ -10,13 +10,13 @@ It can work in 2 modes:
 
 The idea is simple: you make a request to the API in the format `/<username>/<repository>/<branch>` (or just `/<username>/<repository>` (the branch `master` or `main` will be used if any exists)) and you get the response with human-readable JSON.
 
-It is deployed on the [ghloc.bytes.pw](http://ghloc.bytes.pw) (although no any guaranty), so it posible to get statistics using [ghloc.bytes.pw/go-chi/chi](http://ghloc.bytes.pw/go-chi/chi) for example.
+It is deployed on the [ghloc.bytes.pw](http://ghloc.bytes.pw) (although no any guaranty), so it possible to get statistics using [ghloc.bytes.pw/go-chi/chi](http://ghloc.bytes.pw/go-chi/chi) for example.
 
 You can show only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
 * `match=.js$` will show only paths ending with `.js`.
 * `match=^src/` will show only paths starting with `src/` (i.e. placed in the `src` folder).
 * `match=!test` will filter out paths containing `test`.
-* `match=!test,!.sum` will filter paths containing `test` or `.sum`.
+* `match=!test,!.sum` will filter out paths containing `test` or `.sum`.
 * `match=.json$,!^package-lock.json$` will show only json files except for `package-lock.json` file.
 
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
@@ -26,7 +26,7 @@ There is useful web frontend for this API: https://github.com/pajecawav/ghloc-we
 ## CLI mode
 
 Installation (it uses `go` tool):
-```console
+```shell
 go install github.com/subtle-byte/ghloc/cmd/ghloc@latest
 ```
 
