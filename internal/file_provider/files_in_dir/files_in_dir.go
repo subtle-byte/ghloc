@@ -18,7 +18,7 @@ func GetFilesInDir(path string) ([]file_provider.FileForPath, error) {
 		if path == ".git" || path == ".vscode" || path == ".idea" {
 			return fs.SkipDir
 		}
-		if d.IsDir() {
+		if !d.Type().IsRegular() {
 			return nil
 		}
 		ffp = append(ffp, file_provider.FileForPath{
