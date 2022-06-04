@@ -96,13 +96,13 @@ func printInConsole(locsForPaths []stat.LOCForPath, matcher string) {
 		}
 		bStr := fmt.Sprint(b)
 		sepLen := (firstWidth - len(aStr)) + (secondWidth - len(bStr))
-		fmt.Printf(" %v%v%v \n", aStr, strings.Repeat(sep, sepLen), bStr)
+		fmt.Printf(" %v%v%v \n", aStr, strings.Repeat(sep, sepLen+1), bStr)
 	}
 	fmt.Println(strings.Repeat("=", width))
 	printPair("File type", "Lines of code", " ")
 	fmt.Println(strings.Repeat("=", width))
 	for _, stat := range stats {
-		printPair(stat.Lang, stat.Loc, "·")
+		printPair(stat.Lang, stat.Loc, ".")
 	}
 	fmt.Println(strings.Repeat("=", width))
 	printPair("Total", statTree.LOC, " ")
