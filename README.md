@@ -3,8 +3,21 @@
 It is just for fun project for counting the number of non-empty lines of code in a project.
 
 It can work in 2 modes:
-* As server for getting info about any public Github repository.
 * As console utility for getting info about current directory.
+* As server for getting info about any public Github repository.
+
+## CLI mode
+
+Installation (it uses `go` tool):
+```shell
+go install github.com/subtle-byte/ghloc/cmd/ghloc@latest
+```
+
+And then to count lines of code in the current directory - run the command `ghloc`. The web page will be open with the results, e.g.:
+
+<img src="https://user-images.githubusercontent.com/71576382/170814341-a5467b61-b974-4d7a-af80-043037a46608.png" width="600">
+
+Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
 
 ## Server mode
 
@@ -22,19 +35,6 @@ You can show only some files using `match` URL parameter, e.g. with `/someuser/s
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
 There is useful web frontend for this API: https://github.com/pajecawav/ghloc-web (thanks @pajecawav).
-
-## CLI mode
-
-Installation (it uses `go` tool):
-```shell
-go install github.com/subtle-byte/ghloc/cmd/ghloc@latest
-```
-
-And then to count lines of code in the current directory - run the command `ghloc`. The web page will be open with the results, e.g.:
-
-<img src="https://user-images.githubusercontent.com/71576382/170814341-a5467b61-b974-4d7a-af80-043037a46608.png" width="600">
-
-Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
 
 ## TODO
 
