@@ -61,5 +61,6 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rest.WriteResponse(w, err)
 		return
 	}
+	w.Header().Add("Cache-Control", "public, max-age=300")
 	rest.WriteResponse(w, (*rest.Stat)(stat))
 }
