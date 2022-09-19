@@ -23,7 +23,7 @@ Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
 
 The idea is simple: you make a request to the API in the format `/<username>/<repository>/<branch>` (or just `/<username>/<repository>` (the branch `master` or `main` will be used if any exists)) and you get the response with human-readable JSON.
 
-It is deployed on the [ghloc.bytes.pw](http://ghloc.bytes.pw) (although no any guaranty), so it possible to get statistics using [ghloc.bytes.pw/go-chi/chi](http://ghloc.bytes.pw/go-chi/chi) for example.
+It is deployed on the [ghloc.ifels.pw](http://ghloc.ifels.pw) (although no any guaranty), so it possible to get statistics using [ghloc.ifels.pw/go-chi/chi](http://ghloc.ifels.pw/go-chi/chi) for example.
 
 You can show only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
 * `match=.js$` will show only paths ending with `.js`.
