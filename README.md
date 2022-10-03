@@ -25,7 +25,7 @@ The idea is simple: you make a request to the API in the format `/<username>/<re
 
 It is deployed on the [ghloc.ifels.dev](https://ghloc.ifels.dev) (although no any guaranty), so it possible to get statistics using [ghloc.ifels.dev/go-chi/chi](http://ghloc.ifels.dev/go-chi/chi) for example.
 
-You can show only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
+You can see only some files using `match` URL parameter, e.g. with `/someuser/somerepo?match=js` only paths containing `js` will be considered. Examples of more powerful usage:
 * `match=.js$` will show only paths ending with `.js`.
 * `match=^src/` will show only paths starting with `src/` (i.e. placed in the `src` folder).
 * `match=!test` will filter out paths containing `test`.
