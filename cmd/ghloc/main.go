@@ -21,15 +21,21 @@ import (
 var serverStatic embed.FS
 
 func main() {
-	var matcher string
-	flag.StringVar(&matcher, "m", "", "matcher, output will be in the console")
+	var matcher *string
+	flag.Func("m", "sets `match expression` used to filter results, sets flag -c implicitly", func(s string) error {
+		matcher = &s
+		return nil
+	})
+	cli := flag.Bool("c", false, "output to` `console")
 	flag.Parse()
 
 	locsForPaths := countLOCsForPaths()
-	if matcher == "" {
-		runServer(locsForPaths)
+	if matcher != nil {
+		printInConsole(locsForPaths, *matcher)
+	} else if *cli {
+		printInConsole(locsForPaths, "")
 	} else {
-		printInConsole(locsForPaths, matcher)
+		runServer(locsForPaths)
 	}
 }
 

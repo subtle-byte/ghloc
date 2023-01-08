@@ -17,6 +17,8 @@ And then to count lines of code in the current directory - run the command `ghlo
 
 <img src="https://user-images.githubusercontent.com/71576382/170814341-a5467b61-b974-4d7a-af80-043037a46608.png" width="600">
 
+You also can print results in the console using `ghloc -c`. Also if you want to count only some files you can use `-m` (stands for matcher), e.g. to consider only Markdown files use `ghloc -m .md` (see full matcher syntax below).
+
 Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
 
 ## Server mode
