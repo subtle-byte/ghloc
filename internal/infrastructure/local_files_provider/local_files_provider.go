@@ -1,4 +1,4 @@
-package files_in_dir
+package local_files_provider
 
 import (
 	"io"
@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/subtle-byte/ghloc/internal/file_provider"
+	"github.com/subtle-byte/ghloc/internal/service/github_stat"
 )
 
-func GetFilesInDir(path string) ([]file_provider.FileForPath, error) {
-	ffp := []file_provider.FileForPath(nil)
+func GetFilesInDir(path string) ([]github_stat.FileForPath, error) {
+	ffp := []github_stat.FileForPath(nil)
 	err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -21,7 +21,7 @@ func GetFilesInDir(path string) ([]file_provider.FileForPath, error) {
 		if !d.Type().IsRegular() {
 			return nil
 		}
-		ffp = append(ffp, file_provider.FileForPath{
+		ffp = append(ffp, github_stat.FileForPath{
 			Path: path,
 			Opener: func() (io.ReadCloser, error) {
 				return os.Open(path)

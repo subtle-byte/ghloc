@@ -1,4 +1,4 @@
-package stat
+package loc_count
 
 import (
 	"io"

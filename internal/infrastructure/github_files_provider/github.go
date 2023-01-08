@@ -1,4 +1,4 @@
-package github
+package github_files_provider
 
 import (
 	"archive/zip"
@@ -10,9 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/subtle-byte/ghloc/internal/file_provider"
-	"github.com/subtle-byte/ghloc/internal/github_service"
-	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/server/rest"
+	"github.com/subtle-byte/ghloc/internal/service/github_stat"
 	"github.com/subtle-byte/ghloc/internal/util"
 )
 
@@ -37,7 +36,7 @@ func ReadIntoMemory(r io.Reader) (*bytes.Reader, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-func (r Github) GetContent(user, repo, branch string, tempStorage github_service.TempStorage) (_ []file_provider.FileForPath, close func() error, _ error) {
+func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.TempStorage) (_ []github_stat.FileForPath, close func() error, _ error) {
 	url := BuildGithubUrl(user, repo, branch)
 
 	start := time.Now()
@@ -56,12 +55,12 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_service
 		return nil, nil, fmt.Errorf("%v %v %v", url, "unexpected status code", resp.StatusCode)
 	}
 
-	filesForPaths := []file_provider.FileForPath(nil)
+	filesForPaths := []github_stat.FileForPath(nil)
 	closer := func() error { return nil }
 
 	readerAt := io.ReaderAt(nil)
 	len := 0
-	if tempStorage == github_service.TempStorageFile {
+	if tempStorage == github_stat.TempStorageFile {
 		tempFile, err := NewTempFile(resp.Body)
 		if err != nil {
 			return nil, nil, err
@@ -88,7 +87,7 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_service
 	}
 
 	for _, file := range zipReader.File {
-		filesForPaths = append(filesForPaths, file_provider.FileForPath{
+		filesForPaths = append(filesForPaths, github_stat.FileForPath{
 			Path:   file.Name[strings.Index(file.Name, "/")+1:],
 			Opener: file.Open,
 		})

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/pkg/browser"
-	"github.com/subtle-byte/ghloc/internal/file_provider/files_in_dir"
-	"github.com/subtle-byte/ghloc/internal/rest"
-	"github.com/subtle-byte/ghloc/internal/stat"
+	"github.com/subtle-byte/ghloc/internal/infrastructure/local_files_provider"
+	"github.com/subtle-byte/ghloc/internal/server/rest"
+	"github.com/subtle-byte/ghloc/internal/service/loc_count"
 )
 
 //go:embed server_static
@@ -33,7 +33,7 @@ func main() {
 	}
 }
 
-func countLOCsForPaths() []stat.LOCForPath {
+func countLOCsForPaths() []loc_count.LOCForPath {
 	fmt.Print("Counting lines of code...")
 	counted := make(chan bool, 1)
 	go func() {
@@ -49,11 +49,11 @@ func countLOCsForPaths() []stat.LOCForPath {
 		}
 	}()
 
-	files, err := files_in_dir.GetFilesInDir(".")
+	files, err := local_files_provider.GetFilesInDir(".")
 	if err != nil {
 		panic(err)
 	}
-	locCounter := stat.NewLOCCounter()
+	locCounter := loc_count.NewFilesLOCCounter()
 	for _, file := range files {
 		func() {
 			fileReader, err := file.Opener()
@@ -75,8 +75,8 @@ func countLOCsForPaths() []stat.LOCForPath {
 	return locsForPaths
 }
 
-func printInConsole(locsForPaths []stat.LOCForPath, matcher string) {
-	statTree := stat.BuildStatTree(locsForPaths, nil, &matcher)
+func printInConsole(locsForPaths []loc_count.LOCForPath, matcher string) {
+	statTree := loc_count.BuildStatTree(locsForPaths, nil, &matcher)
 	type LocAndLang struct {
 		Loc  int
 		Lang string
@@ -109,7 +109,7 @@ func printInConsole(locsForPaths []stat.LOCForPath, matcher string) {
 	fmt.Println(strings.Repeat("=", width))
 }
 
-func runServer(locsForPaths []stat.LOCForPath) {
+func runServer(locsForPaths []loc_count.LOCForPath) {
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		var filter *string
@@ -120,7 +120,7 @@ func runServer(locsForPaths []stat.LOCForPath) {
 		if matchers := r.Form["match"]; len(matchers) >= 1 {
 			matcher = &matchers[0]
 		}
-		statTree := stat.BuildStatTree(locsForPaths, filter, matcher)
+		statTree := loc_count.BuildStatTree(locsForPaths, filter, matcher)
 		rest.WriteResponse(w, (*rest.Stat)(statTree))
 	})
 

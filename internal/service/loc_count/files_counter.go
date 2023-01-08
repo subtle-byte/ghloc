@@ -1,14 +1,14 @@
-package stat
+package loc_count
 
 import "io"
 
-type LocCounter struct {
+type FilesLocCounter struct {
 	fileLOCCounter fileLOCCounter
 	locsForPaths   []LOCForPath
 }
 
-func NewLOCCounter() *LocCounter {
-	return &LocCounter{
+func NewFilesLOCCounter() *FilesLocCounter {
+	return &FilesLocCounter{
 		fileLOCCounter: newFileLOCCounter(),
 	}
 }
@@ -18,7 +18,7 @@ type LOCForPath struct {
 	LOC  int
 }
 
-func (c *LocCounter) AddFile(path string, file io.Reader) error {
+func (c *FilesLocCounter) AddFile(path string, file io.Reader) error {
 	loc, err := c.fileLOCCounter.Count(file)
 	if err != nil {
 		return err
@@ -30,6 +30,6 @@ func (c *LocCounter) AddFile(path string, file io.Reader) error {
 	return nil
 }
 
-func (c *LocCounter) GetLOCsForPaths() []LOCForPath {
+func (c *FilesLocCounter) GetLOCsForPaths() []LOCForPath {
 	return c.locsForPaths
 }

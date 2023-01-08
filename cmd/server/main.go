@@ -19,10 +19,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
-	"github.com/subtle-byte/ghloc/internal/cacher/postgres"
-	"github.com/subtle-byte/ghloc/internal/file_provider/github"
-	"github.com/subtle-byte/ghloc/internal/github_handler"
-	"github.com/subtle-byte/ghloc/internal/github_service"
+	"github.com/subtle-byte/ghloc/internal/infrastructure/github_files_provider"
+	"github.com/subtle-byte/ghloc/internal/infrastructure/postgres_loc_cacher"
+	"github.com/subtle-byte/ghloc/internal/server/github_handler"
+	"github.com/subtle-byte/ghloc/internal/service/github_stat"
 )
 
 var debugToken *string
@@ -105,18 +105,18 @@ func main() {
 		log.Println("Debug token is set")
 	}
 
-	github := github.Github{}
+	github := github_files_provider.Github{}
 	db, closeDB, err := connectDB()
-	pg := github_service.LOCProvider(nil)
+	pg := github_stat.LOCCacher(nil)
 	if err == nil {
 		defer closeDB()
-		pg = postgres.NewPostgres(db)
+		pg = postgres_loc_cacher.NewPostgres(db)
 		log.Println("Connected to DB")
 	} else {
 		log.Printf("Error connecting to DB: %v", err)
 		log.Println("Warning: continue without DB")
 	}
-	service := github_service.Service{pg, &github}
+	service := github_stat.Service{pg, &github}
 
 	router := chi.NewRouter()
 	router.Use(middleware.RealIP)

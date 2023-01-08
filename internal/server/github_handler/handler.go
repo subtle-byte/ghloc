@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/subtle-byte/ghloc/internal/github_service"
-	"github.com/subtle-byte/ghloc/internal/rest"
-	"github.com/subtle-byte/ghloc/internal/stat"
+	"github.com/subtle-byte/ghloc/internal/server/rest"
+	"github.com/subtle-byte/ghloc/internal/service/github_stat"
+	"github.com/subtle-byte/ghloc/internal/service/loc_count"
 )
 
 type Service interface {
-	GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage github_service.TempStorage) (*stat.StatTree, error)
+	GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage github_stat.TempStorage) (*loc_count.StatTree, error)
 }
 
 type GetStatHandler struct {
@@ -30,7 +30,7 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	noLOCProvider := false
-	tempStorage := github_service.TempStorageFile
+	tempStorage := github_stat.TempStorageFile
 	if h.DebugToken != nil {
 		debugTokenInRequest := r.FormValue("debug_token")
 		if debugTokenInRequest == *h.DebugToken {
@@ -38,7 +38,7 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				noLOCProvider = true
 			}
 			if r.Form["mem_for_temp"] != nil {
-				tempStorage = github_service.TempStorageRam
+				tempStorage = github_stat.TempStorageRam
 			}
 		} else if debugTokenInRequest != "" {
 			rest.WriteResponse(w, rest.BadRequest{"Invalid debug token"})

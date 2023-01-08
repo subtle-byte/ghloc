@@ -1,4 +1,4 @@
-package postgres
+package postgres_loc_cacher
 
 import (
 	"database/sql"
@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/subtle-byte/ghloc/internal/github_service"
-	"github.com/subtle-byte/ghloc/internal/stat"
+	"github.com/subtle-byte/ghloc/internal/service/github_stat"
+	"github.com/subtle-byte/ghloc/internal/service/loc_count"
 	"github.com/subtle-byte/ghloc/internal/util"
 )
 
@@ -34,7 +34,7 @@ func repoName(user, repo, branch string) string {
 	return user + "/" + repo + "/" + branch
 }
 
-func (p Postgres) SetLOCs(user, repo, branch string, locs []stat.LOCForPath) error {
+func (p Postgres) SetLOCs(user, repo, branch string, locs []loc_count.LOCForPath) error {
 	repoName := repoName(user, repo, branch)
 
 	bytes, err := json.Marshal(locs)
@@ -53,7 +53,7 @@ func (p Postgres) SetLOCs(user, repo, branch string, locs []stat.LOCForPath) err
 	return nil
 }
 
-func (p Postgres) GetLOCs(user, repo, branch string) (locs []stat.LOCForPath, _ error) {
+func (p Postgres) GetLOCs(user, repo, branch string) (locs []loc_count.LOCForPath, _ error) {
 	repoName := repoName(user, repo, branch)
 
 	bytes := []byte(nil)
@@ -63,7 +63,7 @@ func (p Postgres) GetLOCs(user, repo, branch string) (locs []stat.LOCForPath, _ 
 	err := p.db.QueryRow("SELECT locs FROM repos WHERE name = $1", repoName).Scan(&bytes)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, github_service.ErrNoData
+			return nil, github_stat.ErrNoData
 		}
 		return nil, err
 	}

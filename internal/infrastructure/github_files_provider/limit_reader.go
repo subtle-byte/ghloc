@@ -1,9 +1,9 @@
-package github
+package github_files_provider
 
 import (
 	"io"
 
-	"github.com/subtle-byte/ghloc/internal/rest"
+	"github.com/subtle-byte/ghloc/internal/server/rest"
 )
 
 // It is like io.LimitedReader but returns model.BadRequest when Remaining == 0

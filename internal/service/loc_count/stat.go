@@ -1,4 +1,4 @@
-package stat
+package loc_count
 
 import (
 	"path"
@@ -13,6 +13,24 @@ type StatTree struct {
 	LOC        LinesNumber
 	LOCByLangs map[LangName]LinesNumber
 	Children   map[FileName]*StatTree
+}
+
+func BuildStatTree(locsForPaths []LOCForPath, filter, matcher *string) *StatTree {
+	root := newStatTreeDir()
+
+	for _, locForPath := range locsForPaths {
+		if filter != nil && filtered(locForPath.Path, filter) {
+			continue
+		}
+		if matcher != nil && !filtered(locForPath.Path, matcher) {
+			continue
+		}
+		root.add(locForPath.Path, locForPath.LOC)
+	}
+
+	root.countDirs()
+
+	return root
 }
 
 func newStatTreeDir() *StatTree {

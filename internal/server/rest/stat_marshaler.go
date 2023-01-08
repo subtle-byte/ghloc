@@ -3,10 +3,10 @@ package rest
 import (
 	"encoding/json"
 
-	"github.com/subtle-byte/ghloc/internal/stat"
+	"github.com/subtle-byte/ghloc/internal/service/loc_count"
 )
 
-type Stat stat.StatTree
+type Stat loc_count.StatTree
 
 func (st *Stat) MarshalJSON() ([]byte, error) {
 	if st.Children == nil {
@@ -22,13 +22,13 @@ func (st *Stat) MarshalJSON() ([]byte, error) {
 				st.LOCByLangs,
 				nil,
 				func(loc1, loc2 interface{}) bool {
-					return loc1.(stat.LinesNumber) > loc2.(stat.LinesNumber)
+					return loc1.(loc_count.LinesNumber) > loc2.(loc_count.LinesNumber)
 				},
 			},
 			SortedMap{
 				st.Children,
 				func(value interface{}) interface{} {
-					return (*Stat)(value.(*stat.StatTree))
+					return (*Stat)(value.(*loc_count.StatTree))
 				},
 				func(stat1, stat2 interface{}) bool {
 					return stat1.(*Stat).LOC > stat2.(*Stat).LOC
