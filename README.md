@@ -34,6 +34,8 @@ You can see only some files using `match` URL parameter, e.g. with `/someuser/so
 
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
+To make the response more compact you can use `pretty=false`, e.g. `/someuser/somerepo?pretty=false`.
+
 There is useful web frontend for this API: https://github.com/pajecawav/ghloc-web (thanks @pajecawav).
 
 ## TODO

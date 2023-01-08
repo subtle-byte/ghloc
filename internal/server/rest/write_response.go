@@ -12,7 +12,7 @@ type errResponse struct {
 	Error string `json:"error"`
 }
 
-func WriteResponse(w http.ResponseWriter, v interface{}) {
+func WriteResponse(w http.ResponseWriter, v interface{}, pretty bool) {
 	code := http.StatusOK
 
 	setISE := func(err error) {
@@ -33,7 +33,13 @@ func WriteResponse(w http.ResponseWriter, v interface{}) {
 		}
 	}
 
-	body, err := json.MarshalIndent(v, "", "  ")
+	var body []byte
+	var err error
+	if pretty {
+		body, err = json.MarshalIndent(v, "", "  ")
+	} else {
+		body, err = json.Marshal(v)
+	}
 	if err != nil {
 		setISE(err)
 	}
