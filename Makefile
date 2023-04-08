@@ -8,3 +8,7 @@ run:
 	DB_CONN="postgres://postgres:password@localhost:54329/?sslmode=disable" \
 	DEBUG_TOKEN="" \
 		go run cmd/server/main.go
+
+test:
+	go build -v ./...
+	go test -cover -v -race ./...
