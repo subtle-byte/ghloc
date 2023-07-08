@@ -28,7 +28,7 @@ func (st *SortedStat) marshalJson(w *Buffer) error {
 		w.UnwriteByte() // remove newline inserted by json.Encoder
 	}
 
-	if st.Children == nil {
+	if len(st.Children) == 0 {
 		encode(st.LOC)
 		return err
 	}

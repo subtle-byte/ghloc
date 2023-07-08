@@ -1,6 +1,7 @@
 package github_stat
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -12,8 +13,8 @@ import (
 var ErrNoData = fmt.Errorf("no data")
 
 type LOCCacher interface {
-	SetLOCs(user, repo, branch string, locs []loc_count.LOCForPath) error
-	GetLOCs(user, repo, branch string) ([]loc_count.LOCForPath, error) // error may be ErrNoData
+	SetLOCs(ctx context.Context, user, repo, branch string, locs []loc_count.LOCForPath) error
+	GetLOCs(ctx context.Context, user, repo, branch string) ([]loc_count.LOCForPath, error) // error may be ErrNoData
 }
 
 type TempStorage int
@@ -31,18 +32,34 @@ type FileForPath struct {
 }
 
 type ContentProvider interface {
-	GetContent(user, repo, branch string, tempStorage TempStorage) (_ []FileForPath, close func() error, _ error)
+	GetContent(ctx context.Context, user, repo, branch string, tempStorage TempStorage) (_ []FileForPath, close func() error, _ error)
 }
 
 type Service struct {
 	LOCCacher       LOCCacher // possibly nil
 	ContentProvider ContentProvider
+	sem             chan struct{} // semaphore for limiting number of concurrent work
 }
 
-func (s *Service) GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage TempStorage) (*loc_count.StatTree, error) {
+func New(locCacher LOCCacher, contentProvider ContentProvider, maxParallelWork int) *Service {
+	return &Service{
+		LOCCacher:       locCacher,
+		ContentProvider: contentProvider,
+		sem:             make(chan struct{}, maxParallelWork),
+	}
+}
+
+func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage TempStorage) (*loc_count.StatTree, error) {
+	select {
+	case s.sem <- struct{}{}:
+		defer func() { <-s.sem }()
+	case <-ctx.Done():
+		return nil, fmt.Errorf("wait in queue: %w", ctx.Err())
+	}
+
 	if s.LOCCacher != nil {
 		if !noLOCProvider {
-			locs, err := s.LOCCacher.GetLOCs(user, repo, branch)
+			locs, err := s.LOCCacher.GetLOCs(ctx, user, repo, branch)
 			if err == nil { // TODO?
 				return loc_count.BuildStatTree(locs, filter, matcher), nil
 			}
@@ -51,9 +68,9 @@ func (s *Service) GetStat(user, repo, branch string, filter, matcher *string, no
 		}
 	}
 
-	filesForPaths, close, err := s.ContentProvider.GetContent(user, repo, branch, tempStorage)
+	filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, tempStorage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get repo content: %w", err)
 	}
 	defer close()
 
@@ -78,7 +95,7 @@ func (s *Service) GetStat(user, repo, branch string, filter, matcher *string, no
 	log.Println("LOCs counted in", time.Since(start))
 
 	if s.LOCCacher != nil && !noLOCProvider {
-		err := s.LOCCacher.SetLOCs(user, repo, branch, locs)
+		err := s.LOCCacher.SetLOCs(ctx, user, repo, branch, locs)
 		if err != nil {
 			log.Println("Error saving LOCs:", err)
 		}
