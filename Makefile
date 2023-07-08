@@ -4,10 +4,15 @@ run-db: stop-db
 stop-db:
 	-docker stop ghloc-db
 
+# DB is optional, if not provided, the service will be run without cache
 run:
 	DB_CONN="postgres://postgres:password@localhost:54329/?sslmode=disable" \
 	DEBUG_TOKEN="" \
 		go run cmd/server/main.go
+
+run-in-docker:
+	docker build -t ghloc .
+	docker run --rm -p 8080:8080 -e DEBUG_TOKEN="" ghloc
 
 test:
 	go build -v ./...

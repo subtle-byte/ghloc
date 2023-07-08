@@ -62,5 +62,5 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Add("Cache-Control", "public, max-age=300")
-	rest.WriteResponse(w, (*rest.Stat)(stat), r.FormValue("pretty") != "false")
+	rest.WriteResponse(w, (*rest.SortedStat)(stat), r.FormValue("pretty") != "false")
 }

@@ -55,11 +55,10 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.Te
 		return nil, nil, fmt.Errorf("%v %v %v", url, "unexpected status code", resp.StatusCode)
 	}
 
-	filesForPaths := []github_stat.FileForPath(nil)
 	closer := func() error { return nil }
 
 	readerAt := io.ReaderAt(nil)
-	len := 0
+	readerLen := 0
 	if tempStorage == github_stat.TempStorageFile {
 		tempFile, err := NewTempFile(resp.Body)
 		if err != nil {
@@ -67,25 +66,26 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.Te
 		}
 		closer = tempFile.Close
 		readerAt = tempFile
-		len = tempFile.Len()
+		readerLen = tempFile.Len()
 	} else {
 		r, err := ReadIntoMemory(resp.Body)
 		if err != nil {
 			return nil, nil, err
 		}
 		readerAt = r
-		len = r.Len()
+		readerLen = r.Len()
 		log.Print("github.GetContent: use memory for temp data")
 	}
 
-	util.LogIOBlocking("github.GetContent", start, fmt.Sprintf("%v %.2fMiB", url, float64(len)/1024.0/1024.0))
+	util.LogIOBlocking("github.GetContent", start, fmt.Sprintf("%v %.2fMiB", url, float64(readerLen)/1024.0/1024.0))
 
-	zipReader, err := zip.NewReader(readerAt, int64(len))
+	zipReader, err := zip.NewReader(readerAt, int64(readerLen))
 	if err != nil {
 		closer()
 		return nil, nil, err
 	}
 
+	filesForPaths := make([]github_stat.FileForPath, 0, len(zipReader.File))
 	for _, file := range zipReader.File {
 		filesForPaths = append(filesForPaths, github_stat.FileForPath{
 			Path:   file.Name[strings.Index(file.Name, "/")+1:],
