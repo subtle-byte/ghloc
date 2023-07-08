@@ -7,12 +7,18 @@ stop-db:
 # DB is optional, if not provided, the service will be run without cache
 run:
 	DB_CONN="postgres://postgres:password@localhost:54329/?sslmode=disable" \
-	DEBUG_TOKEN="" \
-		go run cmd/server/main.go
+	DEBUG_TOKEN="dt" \
+	MAX_REPO_SIZE_MB=100 \
+	MAX_CONCURRENT_WORK=2 \
+		go run ./cmd/server/main.go
 
 run-in-docker:
 	docker build -t ghloc .
-	docker run --rm -p 8080:8080 -e DEBUG_TOKEN="" ghloc
+	docker run --rm -p 8080:8080 \
+		-e DEBUG_TOKEN="dt" \
+		-e MAX_REPO_SIZE_MB=100 \
+		-e MAX_CONCURRENT_WORK=2 \
+		ghloc
 
 test:
 	go build -v ./...

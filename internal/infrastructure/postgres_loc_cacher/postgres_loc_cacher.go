@@ -1,6 +1,7 @@
 package postgres_loc_cacher
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
@@ -34,7 +35,7 @@ func repoName(user, repo, branch string) string {
 	return user + "/" + repo + "/" + branch
 }
 
-func (p Postgres) SetLOCs(user, repo, branch string, locs []loc_count.LOCForPath) error {
+func (p Postgres) SetLOCs(ctx context.Context, user, repo, branch string, locs []loc_count.LOCForPath) error {
 	repoName := repoName(user, repo, branch)
 
 	bytes, err := json.Marshal(locs)
@@ -44,7 +45,7 @@ func (p Postgres) SetLOCs(user, repo, branch string, locs []loc_count.LOCForPath
 
 	start := time.Now()
 
-	_, err = p.db.Exec("INSERT INTO repos VALUES ($1, $2, $3)", repoName, bytes, time.Now().Unix())
+	_, err = p.db.ExecContext(ctx, "INSERT INTO repos VALUES ($1, $2, $3)", repoName, bytes, time.Now().Unix())
 	if err != nil {
 		return err
 	}
@@ -53,14 +54,14 @@ func (p Postgres) SetLOCs(user, repo, branch string, locs []loc_count.LOCForPath
 	return nil
 }
 
-func (p Postgres) GetLOCs(user, repo, branch string) (locs []loc_count.LOCForPath, _ error) {
+func (p Postgres) GetLOCs(ctx context.Context, user, repo, branch string) (locs []loc_count.LOCForPath, _ error) {
 	repoName := repoName(user, repo, branch)
 
 	bytes := []byte(nil)
 
 	start := time.Now()
 
-	err := p.db.QueryRow("SELECT locs FROM repos WHERE name = $1", repoName).Scan(&bytes)
+	err := p.db.QueryRowContext(ctx, "SELECT locs FROM repos WHERE name = $1", repoName).Scan(&bytes)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, github_stat.ErrNoData

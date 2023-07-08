@@ -3,6 +3,7 @@ package github_files_provider
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -16,18 +17,23 @@ import (
 )
 
 type Github struct {
+	maxZipSizeBytes int
 }
 
-const maxZipSize = 100 * 1024 * 1024 // 100 MiB
+func New(maxZipSizeMB int) *Github {
+	return &Github{
+		maxZipSizeBytes: maxZipSizeMB * 1024 * 1024,
+	}
+}
 
-func BuildGithubUrl(user, repo, branch string) string {
+func buildGithubUrl(user, repo, branch string) string {
 	return fmt.Sprintf("https://github.com/%v/%v/archive/refs/heads/%v.zip", user, repo, branch)
 }
 
-func ReadIntoMemory(r io.Reader) (*bytes.Reader, error) {
+func (g *Github) readIntoMemory(r io.Reader) (*bytes.Reader, error) {
 	buf := &bytes.Buffer{}
 
-	lr := &LimitedReader{Reader: r, Remaining: maxZipSize}
+	lr := &LimitedReader{Reader: r, Remaining: g.maxZipSizeBytes}
 	_, err := io.Copy(buf, lr)
 	if err != nil {
 		return nil, err
@@ -36,15 +42,18 @@ func ReadIntoMemory(r io.Reader) (*bytes.Reader, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.TempStorage) (_ []github_stat.FileForPath, close func() error, _ error) {
-	url := BuildGithubUrl(user, repo, branch)
+func (g *Github) GetContent(ctx context.Context, user, repo, branch string, tempStorage github_stat.TempStorage) (_ []github_stat.FileForPath, close func() error, _ error) {
+	url := buildGithubUrl(user, repo, branch)
 
 	start := time.Now()
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		log.Println(url, err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("create request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("do request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -60,7 +69,7 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.Te
 	readerAt := io.ReaderAt(nil)
 	readerLen := 0
 	if tempStorage == github_stat.TempStorageFile {
-		tempFile, err := NewTempFile(resp.Body)
+		tempFile, err := NewTempFile(resp.Body, g.maxZipSizeBytes)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -68,7 +77,7 @@ func (r Github) GetContent(user, repo, branch string, tempStorage github_stat.Te
 		readerAt = tempFile
 		readerLen = tempFile.Len()
 	} else {
-		r, err := ReadIntoMemory(resp.Body)
+		r, err := g.readIntoMemory(resp.Body)
 		if err != nil {
 			return nil, nil, err
 		}

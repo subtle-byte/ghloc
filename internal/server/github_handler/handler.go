@@ -1,6 +1,7 @@
 package github_handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,12 +11,12 @@ import (
 )
 
 type Service interface {
-	GetStat(user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage github_stat.TempStorage) (*loc_count.StatTree, error)
+	GetStat(ctx context.Context, user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage github_stat.TempStorage) (*loc_count.StatTree, error)
 }
 
 type GetStatHandler struct {
 	Service    Service
-	DebugToken *string
+	DebugToken string
 }
 
 func (h *GetStatHandler) RegisterOn(router chi.Router) {
@@ -31,9 +32,9 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	noLOCProvider := false
 	tempStorage := github_stat.TempStorageFile
-	if h.DebugToken != nil {
+	if h.DebugToken != "" {
 		debugTokenInRequest := r.FormValue("debug_token")
-		if debugTokenInRequest == *h.DebugToken {
+		if debugTokenInRequest == h.DebugToken {
 			if r.Form["no_cache"] != nil {
 				noLOCProvider = true
 			}
@@ -56,7 +57,7 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		matcher = &matchers[0]
 	}
 
-	stat, err := h.Service.GetStat(user, repo, branch, filter, matcher, noLOCProvider, tempStorage)
+	stat, err := h.Service.GetStat(r.Context(), user, repo, branch, filter, matcher, noLOCProvider, tempStorage)
 	if err != nil {
 		rest.WriteResponse(w, err, true)
 		return

@@ -2,7 +2,6 @@ package github_files_provider
 
 import (
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 )
@@ -12,23 +11,23 @@ type TempFile struct {
 	len int
 }
 
-func NewTempFile(r io.Reader) (_ *TempFile, err error) {
+func NewTempFile(r io.Reader, maxSizeBytes int) (_ *TempFile, err error) {
 	tf := &TempFile{}
 
-	tf.File, err = ioutil.TempFile("", "")
+	tf.File, err = os.CreateTemp("", "")
 	if err != nil {
 		return nil, err
 	}
 	log.Print("temp file: ", tf.File.Name())
 
-	lr := &LimitedReader{Reader: r, Remaining: maxZipSize}
+	lr := &LimitedReader{Reader: r, Remaining: maxSizeBytes}
 	_, err = io.Copy(tf.File, lr)
 	if err != nil {
 		tf.Close()
 		return nil, err
 	}
 
-	tf.len = maxZipSize - lr.Remaining
+	tf.len = maxSizeBytes - lr.Remaining
 	return tf, nil
 }
 

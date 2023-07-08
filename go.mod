@@ -3,6 +3,7 @@ module github.com/subtle-byte/ghloc
 go 1.19
 
 require (
+	github.com/caarlos0/env/v9 v9.0.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1
 	github.com/golang-migrate/migrate/v4 v4.16.2
