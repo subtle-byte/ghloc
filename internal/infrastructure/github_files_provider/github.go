@@ -6,14 +6,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/subtle-byte/ghloc/internal/server/rest"
 	"github.com/subtle-byte/ghloc/internal/service/github_stat"
-	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 type Github struct {
@@ -73,6 +72,9 @@ func (g *Github) GetContent(ctx context.Context, user, repo, branch string, temp
 		if err != nil {
 			return nil, nil, err
 		}
+		zerolog.Ctx(ctx).Info().
+			Str("fileName", tempFile.File.Name()).
+			Msgf("Using disk file to temporary store repo archive")
 		closer = tempFile.Close
 		readerAt = tempFile
 		readerLen = tempFile.Len()
@@ -83,10 +85,14 @@ func (g *Github) GetContent(ctx context.Context, user, repo, branch string, temp
 		}
 		readerAt = r
 		readerLen = r.Len()
-		log.Print("github.GetContent: use memory for temp data")
+		zerolog.Ctx(ctx).Info().Msgf("Using RAM to temporary store repo archive")
 	}
 
-	util.LogIOBlocking("github.GetContent", start, fmt.Sprintf("%v %.2fMiB", url, float64(readerLen)/1024.0/1024.0))
+	zerolog.Ctx(ctx).Info().
+		Float64("durationSec", time.Since(start).Seconds()).
+		Str("url", url).
+		Int("sizeBytes", readerLen).
+		Msg("Downloaded repo zip archive")
 
 	zipReader, err := zip.NewReader(readerAt, int64(readerLen))
 	if err != nil {

@@ -42,7 +42,7 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				tempStorage = github_stat.TempStorageRam
 			}
 		} else if debugTokenInRequest != "" {
-			rest.WriteResponse(w, rest.BadRequest{"Invalid debug token"}, true)
+			rest.WriteResponse(w, r, rest.BadRequest{"Invalid debug token"}, true)
 			return
 		}
 	}
@@ -59,9 +59,9 @@ func (h GetStatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	stat, err := h.Service.GetStat(r.Context(), user, repo, branch, filter, matcher, noLOCProvider, tempStorage)
 	if err != nil {
-		rest.WriteResponse(w, err, true)
+		rest.WriteResponse(w, r, err, true)
 		return
 	}
 	w.Header().Add("Cache-Control", "public, max-age=300")
-	rest.WriteResponse(w, (*rest.SortedStat)(stat), r.FormValue("pretty") != "false")
+	rest.WriteResponse(w, r, (*rest.SortedStat)(stat), r.FormValue("pretty") != "false")
 }

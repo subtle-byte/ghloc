@@ -39,9 +39,3 @@ There is also `filter` URL parameter, which has the opposite behavior to `match`
 To make the response more compact you can use `pretty=false`, e.g. `/someuser/somerepo?pretty=false`.
 
 There is useful web frontend for this API: https://github.com/pajecawav/ghloc-web (thanks @pajecawav).
-
-## TODO
-
-* Use `context.Context`.
-* Add the prioritized tasks-queue for uncached requests? Limited number of the tasks are executed concurrently.
-* Investigate impact on performance of the fact the repositories returns large slices.

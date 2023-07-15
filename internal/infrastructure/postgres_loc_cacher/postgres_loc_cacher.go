@@ -4,27 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/subtle-byte/ghloc/internal/service/github_stat"
 	"github.com/subtle-byte/ghloc/internal/service/loc_count"
-	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 type Postgres struct {
 	db *sql.DB
 }
 
-func NewPostgres(db *sql.DB) *Postgres {
+func NewPostgres(ctx context.Context, db *sql.DB) *Postgres {
 	go func() {
 		ttl := time.Hour
 		for now := range time.Tick(ttl) {
-			_, err := db.Exec("DELETE FROM repos WHERE cached < $1", now.Add(-ttl).Unix())
+			_, err := db.ExecContext(ctx, "DELETE FROM repos WHERE cached < $1", now.Add(-ttl).Unix())
 			if err != nil {
-				log.Println("Error deleting old cache: ", err)
+				zerolog.Ctx(ctx).Error().Err(err).Msg("Error deleting old cache")
 			} else {
-				log.Println("Old cache is deleted")
+				zerolog.Ctx(ctx).Info().Msg("Old cache is deleted")
 			}
 		}
 	}()
@@ -50,7 +49,10 @@ func (p Postgres) SetLOCs(ctx context.Context, user, repo, branch string, locs [
 		return err
 	}
 
-	util.LogIOBlocking("SetLOCs", start)
+	zerolog.Ctx(ctx).Info().
+		Float64("durationSec", time.Since(start).Seconds()).
+		Int("sizeBytes", len(bytes)).
+		Msg("Set LOC cache")
 	return nil
 }
 
@@ -69,7 +71,10 @@ func (p Postgres) GetLOCs(ctx context.Context, user, repo, branch string) (locs 
 		return nil, err
 	}
 
-	util.LogIOBlocking("GetLOCs", start)
+	zerolog.Ctx(ctx).Info().
+		Float64("durationSec", time.Since(start).Seconds()).
+		Int("sizeBytes", len(bytes)).
+		Msg("Got LOC cache")
 
 	err = json.Unmarshal(bytes, &locs)
 	return locs, err

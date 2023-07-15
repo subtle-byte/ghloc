@@ -2,7 +2,6 @@ package github_files_provider
 
 import (
 	"io"
-	"log"
 	"os"
 )
 
@@ -18,7 +17,6 @@ func NewTempFile(r io.Reader, maxSizeBytes int) (_ *TempFile, err error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Print("temp file: ", tf.File.Name())
 
 	lr := &LimitedReader{Reader: r, Remaining: maxSizeBytes}
 	_, err = io.Copy(tf.File, lr)
