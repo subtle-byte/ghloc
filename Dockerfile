@@ -1,5 +1,5 @@
-# Use rc2 with fix https://github.com/golang/go/commit/08458804fb6591397fe1c58f4e04fd490e70fbcb
-FROM golang:1.21rc2
+# Use rc3 with fix https://github.com/golang/go/commit/08458804fb6591397fe1c58f4e04fd490e70fbcb
+FROM golang:1.21rc3
 
 WORKDIR /src
 ADD . .

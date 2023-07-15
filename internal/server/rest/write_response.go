@@ -3,20 +3,21 @@ package rest
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"mime"
 	"net/http"
+
+	"github.com/rs/zerolog"
 )
 
 type errResponse struct {
 	Error string `json:"error"`
 }
 
-func WriteResponse(w http.ResponseWriter, v interface{}, pretty bool) {
+func WriteResponse(w http.ResponseWriter, r *http.Request, v interface{}, pretty bool) {
 	code := http.StatusOK
 
 	setISE := func(err error) {
-		log.Println(err)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("Internal server error")
 		code = http.StatusInternalServerError
 		v = errResponse{"Internal server error"}
 	}
@@ -47,6 +48,6 @@ func WriteResponse(w http.ResponseWriter, v interface{}, pretty bool) {
 	w.WriteHeader(code)
 	_, err = w.Write(body)
 	if err != nil {
-		log.Println(err)
+		zerolog.Ctx(r.Context()).Error().Err(err).Msg("Error writing http response")
 	}
 }

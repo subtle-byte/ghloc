@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	// _ "net/http/pprof"
 
@@ -14,6 +17,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/rs/zerolog"
 	"github.com/subtle-byte/ghloc/internal/infrastructure/github_files_provider"
 	"github.com/subtle-byte/ghloc/internal/infrastructure/postgres_loc_cacher"
 	"github.com/subtle-byte/ghloc/internal/server/github_handler"
@@ -21,6 +25,7 @@ import (
 )
 
 type Config struct {
+	JSONLogs          bool   `env:"JSON_LOGS" envDefault:"true"`
 	DebugToken        string `env:"DEBUG_TOKEN"`
 	MaxRepoSizeMB     int    `env:"MAX_REPO_SIZE_MB,notEmpty"`
 	MaxConcurrentWork int    `env:"MAX_CONCURRENT_WORK,notEmpty"`
@@ -30,24 +35,39 @@ type Config struct {
 var buildTime = "unknown" // will be replaced during building the docker image
 
 func main() {
-	log.Printf("Starting up the app (build time: %v)\n", buildTime)
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().Round(time.Microsecond).UTC()
+	}
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	log.SetFlags(0)
+	log.SetOutput(logger)
+
+	logger.Info().Str("buildTime", buildTime).Msg("Starting up the app")
+
+	ctx := context.Background()
+	ctx = logger.WithContext(ctx)
 
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
-		log.Fatalf("Parsing config: %v", err)
+		logger.Fatal().Err(err).Msg("Error parsing config")
 	}
-	log.Printf("Debug token is set: %v", cfg.DebugToken != "")
+	if !cfg.JSONLogs {
+		out := &zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}
+		logger = logger.Output(out)
+	}
+	logger.Info().Msgf("Debug token is set: %v", cfg.DebugToken != "")
 
 	github := github_files_provider.New(cfg.MaxRepoSizeMB)
 	db, closeDB, err := connectAndMigrateDB(cfg.DbConnStr)
 	pg := github_stat_service.LOCCacher(nil)
 	if err == nil {
 		defer closeDB()
-		pg = postgres_loc_cacher.NewPostgres(db)
-		log.Println("Connected to DB")
+		pg = postgres_loc_cacher.NewPostgres(ctx, db)
+		logger.Info().Msg("Connected to DB")
 	} else {
-		log.Printf("Error connecting to DB: %v", err)
-		log.Println("Warning: continue without DB")
+		logger.Info().Err(err).Msg("Error connecting to DB")
+		logger.Warn().Msg("Warning: continue without DB")
 	}
 	service := github_stat_service.New(pg, github, cfg.MaxConcurrentWork)
 
@@ -55,9 +75,10 @@ func main() {
 	router.Use(middleware.RealIP)
 	middleware.RequestIDHeader = ""
 	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger)
+	router.Use(NewLoggerMiddleware(logger))
+	router.Use(NewRequestLoggerMiddleware())
 	router.Use(middleware.Compress(5))
-	router.Use(middleware.Recoverer)
+	router.Use(NewRecoverMiddleware())
 	router.Use(cors.AllowAll().Handler)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +96,6 @@ func main() {
 	router.With(NewDebugMiddleware(cfg.DebugToken)).Route("/debug", func(r chi.Router) {
 		getStatHandler.RegisterOn(r)
 	})
-	fmt.Println("Listening on http://localhost:8080")
+	logger.Info().Msg("Listening on http://localhost:8080")
 	http.ListenAndServe(":8080", router)
 }

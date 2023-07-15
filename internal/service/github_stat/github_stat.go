@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/subtle-byte/ghloc/internal/service/loc_count"
+	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 var ErrNoData = fmt.Errorf("no data")
@@ -57,49 +58,61 @@ func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter
 		return nil, fmt.Errorf("wait in queue: %w", ctx.Err())
 	}
 
+	var locs *[]loc_count.LOCForPath
 	if s.LOCCacher != nil {
 		if !noLOCProvider {
-			locs, err := s.LOCCacher.GetLOCs(ctx, user, repo, branch)
-			if err == nil { // TODO?
-				return loc_count.BuildStatTree(locs, filter, matcher), nil
+			cacheLocs, err := s.LOCCacher.GetLOCs(ctx, user, repo, branch)
+			if err != nil {
+				zerolog.Ctx(ctx).Warn().Err(err).Msg("Failed to get locs from cache, will proceed without it")
+			} else {
+				locs = &cacheLocs
 			}
 		} else {
-			log.Println("GetStat: don't use loc provider (only in this request)")
+			zerolog.Ctx(ctx).Info().Msg("GetStat: don't use loc provider (only in this request)")
 		}
 	}
 
-	filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, tempStorage)
-	if err != nil {
-		return nil, fmt.Errorf("get repo content: %w", err)
-	}
-	defer close()
+	if locs == nil {
+		filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, tempStorage)
+		if err != nil {
+			return nil, fmt.Errorf("get repo content: %w", err)
+		}
+		defer close()
 
-	start := time.Now()
+		locCountingStart := time.Now()
 
-	locCounter := loc_count.NewFilesLOCCounter()
-	for _, file := range filesForPaths {
-		err := func() error {
-			fileReader, err := file.Opener()
+		locCounter := loc_count.NewFilesLOCCounter()
+		for _, file := range filesForPaths {
+			err := func() error {
+				fileReader, err := file.Opener()
+				if err != nil {
+					return err
+				}
+				defer fileReader.Close()
+				return locCounter.AddFile(file.Path, fileReader)
+			}()
 			if err != nil {
-				return err
+				return nil, err
 			}
-			defer fileReader.Close()
-			return locCounter.AddFile(file.Path, fileReader)
-		}()
-		if err != nil {
-			return nil, err
 		}
-	}
-	locs := locCounter.GetLOCsForPaths()
+		locs = util.Pointer(locCounter.GetLOCsForPaths())
+		zerolog.Ctx(ctx).Info().
+			Float64("durationSec", time.Since(locCountingStart).Seconds()).
+			Msg("LOCs counted")
 
-	log.Println("LOCs counted in", time.Since(start))
-
-	if s.LOCCacher != nil && !noLOCProvider {
-		err := s.LOCCacher.SetLOCs(ctx, user, repo, branch, locs)
-		if err != nil {
-			log.Println("Error saving LOCs:", err)
+		if s.LOCCacher != nil && !noLOCProvider {
+			err := s.LOCCacher.SetLOCs(ctx, user, repo, branch, *locs)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Msg("Error saving LOCs to the cache")
+			}
 		}
 	}
 
-	return loc_count.BuildStatTree(locs, filter, matcher), nil
+	treeBuildingStart := time.Now()
+	statTree := loc_count.BuildStatTree(*locs, filter, matcher)
+	zerolog.Ctx(ctx).Info().
+		Float64("durationSec", time.Since(treeBuildingStart).Seconds()).
+		Msg("Statistics tree built")
+
+	return statTree, nil
 }

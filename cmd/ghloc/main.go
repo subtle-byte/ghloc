@@ -127,7 +127,7 @@ func runServer(locsForPaths []loc_count.LOCForPath) {
 			matcher = &matchers[0]
 		}
 		statTree := loc_count.BuildStatTree(locsForPaths, filter, matcher)
-		rest.WriteResponse(w, (*rest.SortedStat)(statTree), true)
+		rest.WriteResponse(w, r, (*rest.SortedStat)(statTree), true)
 	})
 
 	serverStatic, err := fs.Sub(serverStatic, "server_static")

@@ -54,7 +54,7 @@ func (h RedirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	branch, err := getDefaultBranch(user, repo)
 	if err != nil {
-		rest.WriteResponse(w, err, true)
+		rest.WriteResponse(w, r, err, true)
 		return
 	}
 
