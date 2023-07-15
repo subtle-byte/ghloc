@@ -63,12 +63,12 @@ func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter
 		if !noLOCProvider {
 			cacheLocs, err := s.LOCCacher.GetLOCs(ctx, user, repo, branch)
 			if err != nil {
-				zerolog.Ctx(ctx).Warn().Err(err).Msg("Failed to get locs from cache, will proceed without it")
+				zerolog.Ctx(ctx).Warn().Err(err).Msg("Failed to get LOCs from cache, will proceed without it")
 			} else {
 				locs = &cacheLocs
 			}
 		} else {
-			zerolog.Ctx(ctx).Info().Msg("GetStat: don't use loc provider (only in this request)")
+			zerolog.Ctx(ctx).Info().Msg("Proceeding without LOCs cache - as requested")
 		}
 	}
 
