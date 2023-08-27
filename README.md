@@ -1,8 +1,11 @@
 # ghloc (GitHub Lines Of Code)
 
-It is just for fun project for counting the number of non-empty lines of code in a project.
+ghloc is just for fun project for counting the number of non-empty lines of code in a project.
 
-It can work in 2 modes:
+> **Note**
+> Try out web UI: [ghloc.vercel.app](https://ghloc.vercel.app) (thanks @pajecawav, github: [ghloc-web](https://github.com/pajecawav/ghloc-web)).
+
+ghloc can work in 2 modes:
 * As console utility for getting info about current directory.
 * As server for getting info about any public Github repository.
 
@@ -17,9 +20,9 @@ And then to count lines of code in the current directory - run the command `ghlo
 
 <img src="https://user-images.githubusercontent.com/71576382/230733010-c740aa8b-fb66-4016-ac5c-1d946c5e733a.png" width="600">
 
-You also can print results in the console using `ghloc -c`. Also if you want to count only some files you can use `-m` (stands for matcher), e.g. to consider only Markdown files use `ghloc -m .md` (see full matcher syntax below).
-
 Thanks @pajecawav for this web UI (https://github.com/pajecawav/ghloc-cli-ui).
+
+You also can print results in the console using `ghloc -c`. Also if you want to count only some files you can use `-m` (stands for matcher), e.g. to consider only Markdown files use `ghloc -m .md` (see full matcher syntax below).
 
 ## Server mode
 
@@ -36,6 +39,4 @@ You can see only some files using `match` URL parameter, e.g. with `/someuser/so
 
 There is also `filter` URL parameter, which has the opposite behavior to `match` parameter. `filter` has the same syntax but it declares which files must be filtered out.
 
-To make the response more compact you can use `pretty=false`, e.g. `/someuser/somerepo?pretty=false`.
-
-There is useful web frontend for this API: https://github.com/pajecawav/ghloc-web (thanks @pajecawav).
+To make the response more compact (removing spaces from the json) you can use `pretty=false`, e.g. `/someuser/somerepo?pretty=false`.
