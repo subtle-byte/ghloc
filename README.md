@@ -1,6 +1,6 @@
 # ghloc (GitHub Lines Of Code)
 
-ghloc is just for fun project for counting the number of non-empty lines of code in a project.
+ghloc is a project for counting the number of non-empty lines of code in a project.
 
 > **Note**
 > Try out web UI: [ghloc.vercel.app](https://ghloc.vercel.app) (thanks @pajecawav, github: [ghloc-web](https://github.com/pajecawav/ghloc-web)).
