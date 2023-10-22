@@ -2,19 +2,23 @@ package github_stat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/subtle-byte/ghloc/internal/server/rest"
 	"github.com/subtle-byte/ghloc/internal/service/loc_count"
 	"github.com/subtle-byte/ghloc/internal/util"
 )
 
 var ErrNoData = fmt.Errorf("no data")
+var ErrRepoTooLarge = rest.BadRequest{Msg: "Too large repository"}
 
 type LOCCacher interface {
 	SetLOCs(ctx context.Context, user, repo, branch string, locs []loc_count.LOCForPath) error
+	SetTooLarge(ctx context.Context, user, repo, branch string) error
 	GetLOCs(ctx context.Context, user, repo, branch string) ([]loc_count.LOCForPath, error) // error may be ErrNoData
 }
 
@@ -63,6 +67,9 @@ func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter
 		if !noLOCProvider {
 			cacheLocs, err := s.LOCCacher.GetLOCs(ctx, user, repo, branch)
 			if err != nil {
+				if errors.Is(err, ErrRepoTooLarge) {
+					return nil, err
+				}
 				zerolog.Ctx(ctx).Warn().Err(err).Msg("Failed to get LOCs from cache, will proceed without it")
 			} else {
 				locs = &cacheLocs
@@ -75,6 +82,12 @@ func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter
 	if locs == nil {
 		filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, tempStorage)
 		if err != nil {
+			if errors.Is(err, ErrRepoTooLarge) && s.LOCCacher != nil {
+				err := s.LOCCacher.SetTooLarge(ctx, user, repo, branch)
+				if err != nil {
+					zerolog.Ctx(ctx).Error().Err(err).Msg("Error marking too large repo in the cache")
+				}
+			}
 			return nil, fmt.Errorf("get repo content: %w", err)
 		}
 		defer close()

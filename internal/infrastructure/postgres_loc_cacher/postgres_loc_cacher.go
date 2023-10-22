@@ -30,40 +30,57 @@ func NewPostgres(ctx context.Context, db *sql.DB) *Postgres {
 	return &Postgres{db: db}
 }
 
-func repoName(user, repo, branch string) string {
+func repoID(user, repo, branch string) string {
 	return user + "/" + repo + "/" + branch
 }
 
 func (p Postgres) SetLOCs(ctx context.Context, user, repo, branch string, locs []loc_count.LOCForPath) error {
-	repoName := repoName(user, repo, branch)
+	repoID := repoID(user, repo, branch)
 
-	bytes, err := json.Marshal(locs)
+	locsJSON, err := json.Marshal(locs)
 	if err != nil {
 		return err
 	}
 
 	start := time.Now()
 
-	_, err = p.db.ExecContext(ctx, "INSERT INTO repos VALUES ($1, $2, $3)", repoName, bytes, time.Now().Unix())
+	_, err = p.db.ExecContext(ctx, "INSERT INTO repos VALUES ($1, $2, $3, $4)", repoID, locsJSON, false, time.Now().Unix())
 	if err != nil {
 		return err
 	}
 
 	zerolog.Ctx(ctx).Info().
 		Float64("durationSec", time.Since(start).Seconds()).
-		Int("sizeBytes", len(bytes)).
+		Int("sizeBytes", len(locsJSON)).
 		Msg("Set LOC cache")
 	return nil
 }
 
-func (p Postgres) GetLOCs(ctx context.Context, user, repo, branch string) (locs []loc_count.LOCForPath, _ error) {
-	repoName := repoName(user, repo, branch)
-
-	bytes := []byte(nil)
+func (p Postgres) SetTooLarge(ctx context.Context, user, repo, branch string) error {
+	repoID := repoID(user, repo, branch)
 
 	start := time.Now()
 
-	err := p.db.QueryRowContext(ctx, "SELECT locs FROM repos WHERE name = $1", repoName).Scan(&bytes)
+	_, err := p.db.ExecContext(ctx, "INSERT INTO repos VALUES ($1, $2, $3, $4)", repoID, nil, true, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+
+	zerolog.Ctx(ctx).Info().
+		Float64("durationSec", time.Since(start).Seconds()).
+		Msg("Marking as too large in cache")
+	return nil
+}
+
+func (p Postgres) GetLOCs(ctx context.Context, user, repo, branch string) (locs []loc_count.LOCForPath, _ error) {
+	repoName := repoID(user, repo, branch)
+
+	locBytes := []byte(nil)
+	tooLarge := false
+
+	start := time.Now()
+
+	err := p.db.QueryRowContext(ctx, "SELECT locs, too_large FROM repos WHERE id = $1", repoName).Scan(&locBytes, &tooLarge)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, github_stat.ErrNoData
@@ -71,11 +88,15 @@ func (p Postgres) GetLOCs(ctx context.Context, user, repo, branch string) (locs 
 		return nil, err
 	}
 
+	if tooLarge {
+		return nil, github_stat.ErrRepoTooLarge
+	}
+
 	zerolog.Ctx(ctx).Info().
 		Float64("durationSec", time.Since(start).Seconds()).
-		Int("sizeBytes", len(bytes)).
+		Int("sizeBytes", len(locBytes)).
 		Msg("Got LOC cache")
 
-	err = json.Unmarshal(bytes, &locs)
+	err = json.Unmarshal(locBytes, &locs)
 	return locs, err
 }
