@@ -37,7 +37,7 @@ type FileForPath struct {
 }
 
 type ContentProvider interface {
-	GetContent(ctx context.Context, user, repo, branch string, tempStorage TempStorage) (_ []FileForPath, close func() error, _ error)
+	GetContent(ctx context.Context, user, repo, branch, token string, tempStorage TempStorage) (_ []FileForPath, close func() error, _ error)
 }
 
 type Service struct {
@@ -54,7 +54,7 @@ func New(locCacher LOCCacher, contentProvider ContentProvider, maxParallelWork i
 	}
 }
 
-func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter, matcher *string, noLOCProvider bool, tempStorage TempStorage) (*loc_count.StatTree, error) {
+func (s *Service) GetStat(ctx context.Context, user, repo, branch, token string, filter, matcher *string, noLOCProvider bool, tempStorage TempStorage) (*loc_count.StatTree, error) {
 	select {
 	case s.sem <- struct{}{}:
 		defer func() { <-s.sem }()
@@ -80,7 +80,7 @@ func (s *Service) GetStat(ctx context.Context, user, repo, branch string, filter
 	}
 
 	if locs == nil {
-		filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, tempStorage)
+		filesForPaths, close, err := s.ContentProvider.GetContent(ctx, user, repo, branch, token, tempStorage)
 		if err != nil {
 			if errors.Is(err, ErrRepoTooLarge) && s.LOCCacher != nil {
 				err := s.LOCCacher.SetTooLarge(ctx, user, repo, branch)

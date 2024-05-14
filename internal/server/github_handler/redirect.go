@@ -18,12 +18,19 @@ func (h *RedirectHandler) RegisterOn(router chi.Router) {
 	router.Get("/{user}/{repo}", h.ServeHTTP)
 }
 
-func getDefaultBranch(user, repo string) (_ string, err error) {
+func getDefaultBranch(user, repo, token string) (_ string, err error) {
 	defer util.WrapErr("get default branch", &err)
 
-	resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/%v/%v", user, repo))
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v", user, repo), nil)
 	if err != nil {
 		return "", err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("do request: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
@@ -51,8 +58,9 @@ func getDefaultBranch(user, repo string) (_ string, err error) {
 func (h RedirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user := chi.URLParam(r, "user")
 	repo := chi.URLParam(r, "repo")
+	token := r.Header.Get("Authorization")
 
-	branch, err := getDefaultBranch(user, repo)
+	branch, err := getDefaultBranch(user, repo, token)
 	if err != nil {
 		rest.WriteResponse(w, r, err, true)
 		return

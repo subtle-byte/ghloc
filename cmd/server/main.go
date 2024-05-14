@@ -85,7 +85,7 @@ func main() {
 		fmt.Fprintf(w, "<html><body><a href='https://github.com/subtle-byte/ghloc'>Docs</a></body><html>")
 	})
 
-	getStatHandler := &github_handler.GetStatHandler{service, cfg.DebugToken}
+	getStatHandler := &github_handler.GetStatHandler{Service: service, DebugToken: cfg.DebugToken}
 	getStatHandler.RegisterOn(router)
 
 	redirectHandler := &github_handler.RedirectHandler{}

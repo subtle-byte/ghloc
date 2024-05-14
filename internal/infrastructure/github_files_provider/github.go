@@ -41,7 +41,7 @@ func (g *Github) readIntoMemory(r io.Reader) (*bytes.Reader, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-func (g *Github) GetContent(ctx context.Context, user, repo, branch string, tempStorage github_stat.TempStorage) (_ []github_stat.FileForPath, close func() error, _ error) {
+func (g *Github) GetContent(ctx context.Context, user, repo, branch, token string, tempStorage github_stat.TempStorage) (_ []github_stat.FileForPath, close func() error, _ error) {
 	url := buildGithubUrl(user, repo, branch)
 
 	start := time.Now()
@@ -49,6 +49,9 @@ func (g *Github) GetContent(ctx context.Context, user, repo, branch string, temp
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create request: %w", err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", token)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
