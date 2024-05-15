@@ -64,7 +64,9 @@ func NewRequestLoggerMiddleware() func(http.Handler) http.Handler {
 				Str("host", r.Host).
 				Str("url", r.RequestURI).
 				Str("protocol", r.Proto).
-				Str("from", r.RemoteAddr).Logger()
+				Str("from", r.RemoteAddr).
+				Str("origin", r.Header.Get("Origin")).
+				Logger()
 			logger.Info().Msg("New request")
 			start := time.Now()
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
