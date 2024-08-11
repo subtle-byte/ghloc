@@ -19,7 +19,7 @@ func NewPostgres(ctx context.Context, db *sql.DB) *Postgres {
 	go func() {
 		ttl := time.Hour
 		for now := range time.Tick(ttl) {
-			_, err := db.ExecContext(ctx, "DELETE FROM repos WHERE cached < $1", now.Add(-ttl).Unix())
+			_, err := db.ExecContext(ctx, "DELETE FROM repos WHERE created_at < $1", now.Add(-ttl).Unix())
 			if err != nil {
 				zerolog.Ctx(ctx).Error().Err(err).Msg("Error deleting old cache")
 			} else {
